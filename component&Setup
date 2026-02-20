@@ -1,0 +1,15 @@
+Components Using:
+-------------------------------------
+Ngrok
+Docker-compose
+
+Command-line :
+Docker-compose down
+Docker-compose up -d
+ngrok config add-authtoken 39ui64VW3JiQHSk2HUzvxd58T3Q_3bpxkMGpV3XjXYAU49ogm
+ngrok http 5678
+
+
+First Setup :
+google sheet
+google API Key
