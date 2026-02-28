@@ -1,0 +1,1499 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond2",
+              "leftValue": "={{ $json.sentiment }}",
+              "rightValue": "Negative",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6f0d8ed7-e0cc-4e39-9d57-6da780ca473c",
+      "name": "Is Negative?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond3",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "Purchase",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6ee74b85-7b06-4636-9ba2-081aaa0d3397",
+      "name": "Is Purchase?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Parse Agent Response').item.json.timestamp }}",
+            "userId": "={{ $('Parse Agent Response').item.json.userId }}",
+            "messageId": "={{ $('Parse Agent Response').item.json.messageId }}",
+            "intent": "={{ $('Parse Agent Response').item.json.intent }}",
+            "sentiment": "={{ $('Parse Agent Response').item.json.sentiment }}",
+            "summary": "={{ $('Parse Agent Response').item.json.summary }}",
+            "product_name": "={{ $('Parse Agent Response').item.json.entities.product_name }}",
+            "quantity": "={{ $('Parse Agent Response').item.json.entities.quantity }}",
+            "recipient_name": "={{ $json.entities.recipient_name }}",
+            "shipping_address": "={{ $json.entities.shipping_address }}",
+            "phone_number": "={{ $json.entities.phone_number }}",
+            "auto_tags": "={{ $json.auto_tags }}",
+            "status": "null"
+          },
+          "matchingColumns": [
+            "userId"
+          ],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "quantity",
+              "displayName": "quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recipient_name",
+              "displayName": "recipient_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "shipping_address",
+              "displayName": "shipping_address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "auto_tags",
+              "displayName": "auto_tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c87cafd9-b41a-4885-b6f4-efabd612351f",
+      "name": "Save Order to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        992,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond4",
+              "leftValue": "={{ $('Parse Agent Response').item.json.intent }}",
+              "rightValue": "Inquiry",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1ac86853-25d2-47d3-8500-128b97de8d34",
+      "name": "Is Inquiry?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        736,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.content }}",
+        "options": {
+          "systemMessage": "คุณคือ ChatBuddy AI ผู้ช่วยแม่ค้าออนไลน์ไทยที่เก่งกาจและสุภาพ หน้าที่ของคุณคือวิเคราะห์ความต้องการของลูกค้าและตอบกลับในรูปแบบ JSON ที่กำหนดเท่านั้น\n\n**กฎการใช้เครื่องมือ (Tools):**\n1. หากลูกค้าถามเกี่ยวกับสินค้า ราคา สต็อก หรือโปรโมชัน (intent: Inquiry):\n   - ห้ามเดาคำตอบเองเด็ดขาด\n   - ต้องใช้ Tool `Get_Product` โดยระบุชื่อสินค้าใน search_query เพื่อดึงข้อมูลล่าสุดจาก Database\n   - นำข้อมูลที่ได้จาก Tool มาเขียน reply_message ให้ลูกค้า\n\n2. หากลูกค้าต้องการเช็คสถานะการส่งสินค้า (intent: Status_Check):\n   - ตรวจสอบว่ามี \"ชื่อ\" หรือ \"เบอร์โทร\" ในข้อความหรือไม่\n   - ถ้ามี: ให้ใส่ค่านั้นใน entities.search_query และเรียก Tool `Get_Order` ทันที\n   - ถ้าไม่มี: ให้ตั้ง reply_message ว่า \"กรุณาแจ้งชื่อหรือเบอร์โทรที่ใช้สั่งสินค้าเพื่อให้แม่ค้าเช็คสถานะให้หน่อยนะคะ\" และไม่ต้องเรียก Tool\n\n3. หากลูกค้าต้องการสั่งซื้อ (intent: Purchase):\n   - ดึงข้อมูลสินค้า (product_name), จำนวน (quantity), ชื่อ (recipient_name), ที่อยู่ (shipping_address) และเบอร์โทร (phone_number) ลงใน entities ให้ครบถ้วนที่สุด\n\n4. **Complaint (ลูกค้าไม่พอใจ):** หากลูกค้าใช้คำหยาบคาย, บ่นเรื่องบริการ, สินค้าเสียหาย, ส่งช้า หรือแสดงอารมณ์โกรธ/ผิดหวัง ให้ตั้ง intent: Complaint และ sentiment: Negative ทันที\n   - reply_message: \"ต้องขออภัยในความไม่สะดวกอย่างสูงนะคะ เดี๋ยวแม่ค้าจะรีบตรวจสอบและแก้ไขให้ด่วนที่สุดเลยค่ะ\"\n\n5. **Other (อื่นๆ):** เช่น การทักทายหรือขอบคุณทั่วไป\n   - **Status:** ให้ตั้งเป็น \"Completed\"\n\n**รูปแบบการตอบกลับ (Strict JSON Output):**\nตอบกลับเป็น JSON Object เท่านั้น ห้ามมีข้อความเกริ่นนำหรือปิดท้าย:\n{\n  \"intent\": \"Purchase | Inquiry | Status_Check | Complaint | Other\",\n  \"sentiment\": \"Positive | Neutral | Negative\",\n  \"summary\": \"สรุปเนื้อหาที่ลูกค้าพิมพ์มา 1 ประโยค\",\n  \"reply_message\": \"ข้อความตอบกลับภาษาไทย สไตล์แม่ค้าออนไลน์ใจดี มีหางเสียง (คะ/ค่ะ)\",\n  \"entities\": {\n    \"product_name\": \"ชื่อสินค้า\",\n    \"quantity\": \"จำนวน\",\n    \"recipient_name\": \"ชื่อผู้รับ\",\n    \"shipping_address\": \"ที่อยู่\",\n    \"phone_number\": \"เบอร์โทร\",\n    \"search_query\": \"คำที่ใช้ค้นหาใน Tool\"\n  },\n  \"auto_tags\": [\"tag1\", \"tag2\"]\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -720,
+        272
+      ],
+      "id": "ed26d776-ee0d-47d0-9d81-a1f47e8cfdb5",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.userId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -704,
+        480
+      ],
+      "id": "3f0a2058-02b7-4ce7-8031-8968cd8c898a",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tnibot",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1312,
+        272
+      ],
+      "id": "89fa5fac-5c20-4a2a-ad08-0a553cc17478",
+      "name": "Webhook",
+      "webhookId": "6f605e20-857e-4e87-b584-f0a0b6862cb2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst events = body.events || [];\nif (!events.length) return [{ json: { skip: true } }];\nconst event = events[0];\nconst userId     = event.source?.userId || 'unknown';\nconst msgType    = event.message?.type  || 'unknown';\nconst replyToken = event.replyToken || '';\n\nlet content = '';\nlet imageId  = null;\n\nif (msgType === 'text') {\n  content = event.message.text;\n} else if (msgType === 'image') {\n  content = '[IMAGE]';\n  imageId = event.message.id;\n} else if (msgType === 'location') {\n  content = '[LOCATION] lat:' + event.message.latitude + ' lng:' + event.message.longitude + ' addr:' + event.message.address;\n}\n\nreturn [{\n  json: {\n    userId,\n    messageId: event.message?.id || '',\n    messageType: msgType,\n    content,\n    imageId,\n    replyToken,\n    timestamp: new Date(event.timestamp).toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        272
+      ],
+      "id": "03c4048c-7ac2-4a2e-941f-b01f276c02a9",
+      "name": "Pre-process Payload"
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst prev = $('Pre-process Payload').first().json;\n\nlet parsed;\ntry {\n  const cleaned = agentOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  parsed = {\n    intent: 'Other',\n    sentiment: 'Neutral',\n    summary: 'วิเคราะห์ไม่ได้',\n    reply_message: 'ขอโทษค่ะ ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้งนะคะ',\n    entities: {},\n    auto_tags: []\n  };\n}\n\nreturn [{\n  json: {\n    ...prev,\n    intent:        parsed.intent        || 'Other',\n    sentiment:     parsed.sentiment     || 'Neutral',\n    summary:       parsed.summary       || '',\n    reply_message: parsed.reply_message || '',\n    entities:      parsed.entities      || {},\n    auto_tags:     Array.isArray(parsed.auto_tags) ? parsed.auto_tags.join(',') : '',\n    analyzedAt:    new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        272
+      ],
+      "id": "c458e58e-43f9-45df-9d7e-879b64206ffb",
+      "name": "Parse Agent Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8c0296d9-f8fa-4b64-acee-1ad38f0567cf",
+              "leftValue": "={{ $('Parse Agent Response').item.json.intent }}",
+              "rightValue": "Status_Check",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        736,
+        592
+      ],
+      "id": "469e5824-8815-47ad-aea3-9652a4865663",
+      "name": "Is Status Check?"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1146702807,
+          "mode": "list",
+          "cachedResultName": "Complaints",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=1146702807"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Parse Agent Response').item.json.timestamp }}",
+            "userId": "={{ $('Parse Agent Response').item.json.userId }}",
+            "messageId": "={{ $('Parse Agent Response').item.json.messageId }}",
+            "intent": "={{ $('Parse Agent Response').item.json.intent }}",
+            "content": "={{ $('Parse Agent Response').item.json.content }}",
+            "summary": "={{ $('Parse Agent Response').item.json.summary }}",
+            "auto_tags": "={{ $('Parse Agent Response').item.json.auto_tags }}",
+            "status": "null"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "auto_tags",
+              "displayName": "auto_tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "070a2203-a815-47d2-87bf-fda5e498d971",
+      "name": "Save Complaint to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        64,
+        160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?gid=0#gid=0",
+          "__regex": "https:\\/\\/(?:drive|docs)\\.google\\.com(?:\\/.*|)\\/d\\/([0-9a-zA-Z\\-_]+)(?:\\/.*|)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "35775ad5-db4c-429e-bf00-6832332303a1",
+      "name": "Fetch Orders for Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        992,
+        592
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Pre-process Payload').first().json;\nconst replyToken = prev.replyToken;\nconst allOrders = $input.all().map(r => r.json);\n\n// Get search_query from agent parsed output\nconst agentData = $('Parse Agent Response').first().json;\nconst searchQuery = (agentData.entities && agentData.entities.search_query\n  ? agentData.entities.search_query : '').toLowerCase().trim();\n\nif (!searchQuery) {\n  return [{ json: {\n    replyToken,\n    reply_message: 'กรุณาแจ้งชื่อผู้รับ หรือเบอร์โทรที่ใช้สั่งสินค้าด้วยนะคะ 🙏'\n  }}];\n}\n\n// Search by recipient_name or phone_number (partial, case-insensitive)\nconst matched = allOrders.filter(r => {\n  const name  = (r.recipient_name || '').toLowerCase();\n  const phone = (r.phone_number   || '').toLowerCase();\n  return name.includes(searchQuery) || phone.includes(searchQuery);\n}).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));\n\nif (!matched.length) {\n  return [{ json: {\n    replyToken,\n    reply_message: 'ขออภัยค่ะ ไม่พบออเดอร์ของ \"' + searchQuery + '\" ในระบบ\\n'\n      + 'กรุณาตรวจสอบชื่อหรือเบอร์โทรอีกครั้ง หรือติดต่อแอดมินได้เลยนะคะ 🙏'\n  }}];\n}\n\nconst statusEmoji = {\n  Pending_Payment: '⏳',\n  Paid: '💳',\n  Shipped: '🚚',\n  Delivered: '✅'\n};\n\nlet msg = '📦 สถานะออเดอร์ทั้งหมด (' + matched.length + ' รายการ)\\n';\nmsg += '━━━━━━━━━━━━━━━\\n';\n\nmatched.forEach((o, i) => {\n  const emoji = statusEmoji[o.status] || '📋';\n  const date  = o.timestamp ? o.timestamp.split('T')[0] : '-';\n  msg += (i + 1) + '. ' + (o.product_name || '-') + ' x' + (o.quantity || '1') + '\\n';\n  msg += '   ' + emoji + ' สถานะ: ' + (o.status || '-') + '\\n';\n  if (o.tracking_number) msg += '   🔍 Tracking: ' + o.tracking_number + '\\n';\n  if (o.status === 'Pending_Payment') {\n    msg += '   💰 ยอดที่ต้องชำระ: ' + (o.payment_amount || 'กรุณาสอบถาม') + ' บาท\\n';\n  }\n  msg += '   📅 วันที่สั่ง: ' + date + '\\n';\n  if (i < matched.length - 1) msg += '───────────\\n';\n});\n\nmsg += '━━━━━━━━━━━━━━━\\n';\nmsg += 'มีข้อสงสัยเพิ่มเติมสอบถามได้เลยนะคะ 😊';\n\nreturn [{ json: { replyToken, reply_message: msg } }];"
+      },
+      "id": "f3b27c95-e499-4b8e-b09d-a2e49f5f9284",
+      "name": "Build Status Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        592
+      ],
+      "id": "0cbcb21c-66d3-4912-a2ee-73ef090d860d",
+      "name": "Reply Status",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "ใช้สำหรับเช็คสถานะออเดอร์ โดยรับค่าเป็นชื่อลูกค้าหรือเบอร์โทรศัพท์",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "recipient_name",
+              "lookupValue": "={{ $fromAI('search_query') }}"
+            },
+            {
+              "lookupColumn": "phone_number",
+              "lookupValue": "={{ $fromAI('search_query') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -464,
+        480
+      ],
+      "id": "565027e5-2eb0-440d-9a8b-6a499d219a5e",
+      "name": "Get_Order",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "ใช้สำหรับค้นหาข้อมูลสินค้า ราคา และสต็อก โดยรับค่าเป็นชื่อสินค้า",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2115791625,
+          "mode": "list",
+          "cachedResultName": "Products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=2115791625"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "=product_name",
+              "lookupValue": "={{ $fromAI('search_query') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -576,
+        480
+      ],
+      "id": "1bbae5f8-2a78-49b4-bab1-5d4cdb05a2bd",
+      "name": "Get_Product",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a67b6329-afe1-4331-ab9f-6018142d61ea",
+              "leftValue": "={{ $json.messageType }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -928,
+        272
+      ],
+      "id": "e2e932ec-65ca-4f86-bdbc-d723702f1847",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "model": "arcee-ai/trinity-large-preview:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        480
+      ],
+      "id": "a407a87d-1db3-4766-a97e-4501dd10bb86",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "EIIeyOxA7zcaDuyt",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{ $json.userId }}",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "={{ $('Webhook').item.json.body.events[0].message.quoteToken }}",
+              "text": "={{ $json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        272,
+        160
+      ],
+      "id": "6bd32f4a-8517-40b0-829e-a972142cae1a",
+      "name": "NotifyAdmin",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 150032561,
+          "mode": "list",
+          "cachedResultName": "Log_Others",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=150032561"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "summary": "={{ $('Parse Agent Response').item.json.summary }}",
+            "status": "null",
+            "sentiment": "={{ $('Parse Agent Response').item.json.sentiment }}",
+            "timestamp": "={{ $('Parse Agent Response').item.json.timestamp }}",
+            "userId": "={{ $('Parse Agent Response').item.json.userId }}",
+            "content": "={{ $('Parse Agent Response').item.json.content }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "34809038-a6b3-43d0-ad80-7dda23429adb",
+      "name": "Log_Others",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        992,
+        768
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8c0296d9-f8fa-4b64-acee-1ad38f0567cf",
+              "leftValue": "={{ $('Parse Agent Response').item.json.intent }}",
+              "rightValue": "Other",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        736,
+        752
+      ],
+      "id": "1bc7d160-67b8-472e-9a2c-0dd5186f588d",
+      "name": "Other"
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('Parse Agent Response').item.json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "={{ $('Webhook').item.json.body.events[0].message.quoteToken }}",
+              "text": "ขออภัยค่ะ แม่ค้าไม่เข้าใจคำถาม รบกวนสอบถามเรื่องสินค้าได้เลยนะคะ 🙏"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        768
+      ],
+      "id": "51675d2f-4c8b-454e-b275-d2e579cb1ecd",
+      "name": "Reply Other",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('Parse Agent Response').item.json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $('Parse Agent Response').item.json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        432
+      ],
+      "id": "11380e13-d277-47ce-99a9-a7f8c43b4494",
+      "name": "Inquiry Reply",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "32bf2ffc-df38-428b-9418-949fbfdaf375",
+              "leftValue": "={{ $('Parse Agent Response').item.json.entities.recipient_name }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "7ce94f21-4ba1-483e-9f64-a39b658b66f3",
+              "leftValue": "={{ $('Parse Agent Response').item.json.entities.shipping_address }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "dd6d20ee-764e-4133-ad9d-f1f49cb5d915",
+              "leftValue": "={{ $('Parse Agent Response').item.json.entities.phone_number }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        736,
+        272
+      ],
+      "id": "431e607a-fee6-4298-8988-9bfcb22e6d10",
+      "name": "Contact Info"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1701096102,
+          "mode": "list",
+          "cachedResultName": "Inquiries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CZ8nuSdvUMpyLDLwFqhKmEaPKUVjYKVwslVxzRAD3AQ/edit#gid=1701096102"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Parse Agent Response').item.json.timestamp }}",
+            "userId": "={{ $('Parse Agent Response').item.json.userId }}",
+            "messageId": "={{ $('Parse Agent Response').item.json.messageId }}",
+            "intent": "={{ $('Parse Agent Response').item.json.intent }}",
+            "content": "={{ $('Parse Agent Response').item.json.content }}",
+            "summary": "={{ $('Parse Agent Response').item.json.summary }}",
+            "product_name": "={{ $('Parse Agent Response').item.json.entities.product_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "917f3f18-41f9-44f0-b9ad-b95bbad079dd",
+      "name": "Save Inquiry to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        992,
+        432
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentData = $('Parse Agent Response').first().json;\nconst prevData = $('Pre-process Payload').first().json;\n\n// ดึงข้อมูล Entities จาก AI\nconst entities = agentData.entities || {};\nconst missing = [];\n\n// เช็คข้อมูลติดต่อสำคัญ\nif (!entities.recipient_name || entities.recipient_name === '-') missing.push(\"ชื่อผู้รับ\");\nif (!entities.phone_number || entities.phone_number === '-') missing.push(\"เบอร์โทรศัพท์\");\nif (!entities.shipping_address || entities.shipping_address === '-') missing.push(\"ที่อยู่จัดส่ง\");\n\nlet finalMessage = \"\";\nlet isComplete = false;\n\nif (missing.length > 0) {\n    // กรณีส่งไม่ครบ: บอกให้ชัดว่าขาดอะไร\n    finalMessage = `ขอบคุณสำหรับข้อมูลเพิ่มเติมค่ะขาดอีกนิดเดียว รบกวนขอทราบ ${missing.join(\" และ \")} หน่อยนะคะ เพื่อให้แม่ค้าสรุปยอดและส่งของให้ได้ถูกต้องค่ะ 😊`;\n    isComplete = false;\n} else {\n    // กรณีครบถ้วน: สรุปออเดอร์\n    finalMessage = `ได้รับข้อมูลครบถ้วนแล้วค่ะ! ขอบคุณมากนะคะ เดี๋ยวแม่ค้าตรวจสอบข้อมูลแล้วรีบแจ้งสรุปยอดให้ทราบทันทีค่ะ 🙏`;\n    isComplete = true;\n}\n\nreturn [{\n    json: {\n        replyToken: prevData.replyToken,\n        reply_message: finalMessage,\n        is_complete: isComplete,\n        // ข้อมูลสำหรับลง Google Sheet (image_0ba9de.png)\n        status: isComplete ? \"Completed\" : \"Incomplete\",\n        sentiment: agentData.sentiment,\n        recipient_name: entities.recipient_name || '-',\n        shipping_address: entities.shipping_address || '-',\n        phone_number: entities.phone_number || '-',\n        auto_tags: Array.isArray(agentData.auto_tags) ? agentData.auto_tags.join(',') : agentData.auto_tags\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        288
+      ],
+      "id": "71d0ce4b-fe7a-4261-affb-f173efed9138",
+      "name": "Check & Remind"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{ $('Parse Agent Response').item.json.userId }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        288
+      ],
+      "id": "708d5b80-3c92-49f4-98eb-2a8905d3dbaf",
+      "name": "Line Messaging",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('Parse Agent Response').item.json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $('Parse Agent Response').item.json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        112
+      ],
+      "id": "18aec5f9-d2eb-4ec9-ad33-368f839ec628",
+      "name": "Reply Other1",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Is Negative?": {
+      "main": [
+        [
+          {
+            "node": "Save Complaint to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Purchase?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Purchase?": {
+      "main": [
+        [
+          {
+            "node": "Contact Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Inquiry?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Order to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Reply Other1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Inquiry?": {
+      "main": [
+        [
+          {
+            "node": "Save Inquiry to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Status Check?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Pre-process Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-process Payload": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Is Negative?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Status Check?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Orders for Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Other",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Complaint to Sheets": {
+      "main": [
+        [
+          {
+            "node": "NotifyAdmin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Orders for Status": {
+      "main": [
+        [
+          {
+            "node": "Build Status Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Status Reply": {
+      "main": [
+        [
+          {
+            "node": "Reply Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Status": {
+      "main": [
+        []
+      ]
+    },
+    "Get_Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Product": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NotifyAdmin": {
+      "main": [
+        [
+          {
+            "node": "Is Purchase?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log_Others": {
+      "main": [
+        [
+          {
+            "node": "Reply Other",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Other": {
+      "main": [
+        [
+          {
+            "node": "Log_Others",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Reply Other": {
+      "main": [
+        []
+      ]
+    },
+    "Contact Info": {
+      "main": [
+        [
+          {
+            "node": "Save Order to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check & Remind",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Inquiry to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Inquiry Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check & Remind": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6f2390f8d3b12b330079ab28a61d9b61867a3a358d18bf79d0c95bd230598c0a"
+  }
+}

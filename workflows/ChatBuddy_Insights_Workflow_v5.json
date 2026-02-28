@@ -1,0 +1,1149 @@
+{
+  "name": "ChatBuddy Insights v5 - Status Check (by name/phone)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbuddy-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n1",
+      "name": "LINE Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst events = body.events || [];\nif (!events.length) return [{ json: { skip: true } }];\n\nconst event = events[0];\nconst userId     = event.source?.userId || 'unknown';\nconst msgType    = event.message?.type  || 'unknown';\nconst replyToken = event.replyToken || '';\n\nlet content = '';\nlet imageId  = null;\n\nif (msgType === 'text') {\n  content = event.message.text;\n} else if (msgType === 'image') {\n  content = '[IMAGE]';\n  imageId = event.message.id;\n} else if (msgType === 'location') {\n  content = '[LOCATION] lat:' + event.message.latitude + ' lng:' + event.message.longitude + ' addr:' + event.message.address;\n}\n\nreturn [{\n  json: {\n    userId,\n    messageId: event.message?.id || '',\n    messageType: msgType,\n    content,\n    imageId,\n    replyToken,\n    timestamp: new Date(event.timestamp).toISOString()\n  }\n}];"
+      },
+      "id": "n2",
+      "name": "Pre-process Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.messageType }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n3",
+      "name": "Is Image?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $json.imageId }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.LINE_CHANNEL_ACCESS_TOKEN }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "n4",
+      "name": "Download Image from LINE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "bankSlip",
+        "operation": "verifyByImage",
+        "imageBinaryProperty": "data",
+        "checkDuplicate": true,
+        "additionalOptions": {}
+      },
+      "id": "n5",
+      "name": "Thunder: Verify Slip",
+      "type": "n8n-nodes-thunder.thunder",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const slipData = $input.first().json;\nconst prev = $('Pre-process Payload').first().json;\n\nconst isDuplicate = slipData.message === 'duplicate_slip';\nconst data = slipData.data || {};\nconst amount           = data.amount || 0;\nconst receiverName     = (data.receiver && data.receiver.account && data.receiver.account.name) ? (data.receiver.account.name.th || data.receiver.account.name.en || 'ไม่ระบุ') : 'ไม่ระบุ';\nconst receiverBankId   = (data.receiver && data.receiver.bank) ? (data.receiver.bank.id   || 'ไม่ระบุ') : 'ไม่ระบุ';\nconst receiverBankName = (data.receiver && data.receiver.bank) ? (data.receiver.bank.name || 'ไม่ระบุ') : 'ไม่ระบุ';\nconst senderName       = (data.sender   && data.sender.account && data.sender.account.name) ? (data.sender.account.name.th || data.sender.account.name.en || 'ไม่ระบุ') : 'ไม่ระบุ';\nconst txDate           = data.transactionDate || prev.timestamp;\nconst reference        = data.reference || '';\n\nreturn [{\n  json: {\n    ...prev,\n    intent: 'Payment_Proof',\n    sentiment: 'Positive',\n    summary: 'สลิปโอนเงิน ' + amount + ' บาท จาก ' + senderName,\n    entities: {\n      payment_amount: amount,\n      sender_name: senderName,\n      receiver_name: receiverName,\n      receiver_bank_id: receiverBankId,\n      receiver_bank_name: receiverBankName,\n      transaction_date: txDate,\n      reference: reference\n    },\n    auto_tags: isDuplicate ? '#Slip_Duplicate,#Paid_รอส่ง' : '#Paid_รอส่ง',\n    slipValid: true,\n    isDuplicate: isDuplicate\n  }\n}];"
+      },
+      "id": "n6",
+      "name": "Parse Slip Matched",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Pre-process Payload').first().json;\nreturn [{\n  json: {\n    ...prev,\n    intent: 'Payment_Proof',\n    sentiment: 'Neutral',\n    summary: 'สลิปไม่ตรงกับเงื่อนไขที่ตั้งไว้',\n    entities: {},\n    auto_tags: '#Slip_Not_Matched',\n    slipValid: false,\n    isDuplicate: false\n  }\n}];"
+      },
+      "id": "n7",
+      "name": "Parse Slip Not Matched",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "={{ $env.GOOGLE_SHEET_ID }}",
+        "sheetName": "Payments",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "userId": "={{ $json.userId }}",
+            "messageId": "={{ $json.messageId }}",
+            "intent": "Payment_Proof",
+            "payment_amount": "={{ $json.entities.payment_amount }}",
+            "sender_name": "={{ $json.entities.sender_name }}",
+            "receiver_name": "={{ $json.entities.receiver_name }}",
+            "receiver_bank_id": "={{ $json.entities.receiver_bank_id }}",
+            "receiver_bank_name": "={{ $json.entities.receiver_bank_name }}",
+            "transaction_date": "={{ $json.entities.transaction_date }}",
+            "reference": "={{ $json.entities.reference }}",
+            "auto_tags": "={{ $json.auto_tags }}",
+            "is_duplicate": "={{ $json.isDuplicate }}",
+            "status": "Paid"
+          }
+        },
+        "options": {}
+      },
+      "id": "n8",
+      "name": "Save Payment to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1580,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "resource": "message",
+        "operation": "reply",
+        "replyToken": "={{ $('Pre-process Payload').first().json.replyToken }}",
+        "messages": {
+          "message": [
+            {
+              "type": "text",
+              "text": "={{ $json.isDuplicate ? '⚠️ ตรวจพบสลิปซ้ำค่ะ หากมีข้อสงสัยกรุณาติดต่อแอดมินนะคะ' : '✅ รับสลิปแล้วค่ะ!\\n💰 ยอด: ' + $json.entities.payment_amount + ' บาท\\n👤 ผู้โอน: ' + $json.entities.sender_name + '\\n🏦 ธนาคาร: ' + $json.entities.receiver_bank_name + '\\n\\nจะรีบจัดส่งให้เร็วๆ นี้นะคะ 📦' }}"
+            }
+          ]
+        }
+      },
+      "id": "n9",
+      "name": "Reply Slip OK",
+      "type": "n8n-nodes-base.line",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "resource": "message",
+        "operation": "reply",
+        "replyToken": "={{ $('Pre-process Payload').first().json.replyToken }}",
+        "messages": {
+          "message": [
+            {
+              "type": "text",
+              "text": "⚠️ ขออภัยค่ะ ไม่สามารถตรวจสอบสลิปได้\nกรุณาส่งสลิปใหม่อีกครั้ง หรือติดต่อแอดมินโดยตรงนะคะ 🙏"
+            }
+          ]
+        }
+      },
+      "id": "n10",
+      "name": "Reply Slip Failed",
+      "type": "n8n-nodes-base.line",
+      "typeVersion": 1,
+      "position": [
+        1580,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "คุณคือ ChatBuddy AI ผู้ช่วยแม่ค้าออนไลน์ไทย\n\nวิเคราะห์ข้อความลูกค้าและตอบเป็น JSON เท่านั้น ห้ามมีข้อความอื่นนอก JSON:\n{\n  \"intent\": \"Purchase | Inquiry | Status_Check | Complaint | Other\",\n  \"sentiment\": \"Positive | Neutral | Negative\",\n  \"summary\": \"สรุป 1 ประโยค\",\n  \"reply_message\": \"ข้อความตอบลูกค้า ภาษาไทย สไตล์แม่ค้าใจดี\",\n  \"entities\": {\n    \"product_name\": null,\n    \"quantity\": null,\n    \"recipient_name\": null,\n    \"shipping_address\": null,\n    \"phone_number\": null,\n    \"search_query\": null\n  },\n  \"auto_tags\": []\n}\n\nกฎสำคัญ:\n- ถ้า intent = Inquiry ให้เรียก Tool get_product_info ก่อนตอบเสมอ\n- ถ้า intent = Status_Check:\n    * ดูว่าลูกค้าพิมพ์ชื่อหรือเบอร์โทรมาไหม\n    * ถ้ามี → ใส่ลงใน entities.search_query แล้วเรียก Tool get_order_status\n    * ถ้าไม่มี → ตั้ง reply_message ถามลูกค้าว่า 'กรุณาแจ้งชื่อหรือเบอร์โทรที่ใช้สั่งสินค้าด้วยนะคะ'\n- ถ้า intent = Purchase ให้ดึง entities ให้ครบ\n- reply_message ต้องมีข้อมูลจาก Tool ถ้าเป็น Inquiry หรือ Status_Check"
+        }
+      },
+      "id": "n11",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        900,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "id": "n12",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        760,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "name": "get_product_info",
+        "description": "ค้นหาข้อมูลสินค้าจาก Product Database ของร้าน ใช้เมื่อลูกค้าถามเกี่ยวกับสินค้า ราคา สต็อก หรือโปรโมชัน",
+        "workflowId": "={{ $env.PRODUCT_LOOKUP_WORKFLOW_ID }}",
+        "workflowInputs": {
+          "schema": [
+            {
+              "key": "product_query",
+              "type": "string",
+              "description": "ชื่อสินค้าหรือ keyword ที่ลูกค้าถาม"
+            }
+          ]
+        }
+      },
+      "id": "n13",
+      "name": "Tool get product info",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst prev = $('Pre-process Payload').first().json;\n\nlet parsed;\ntry {\n  const cleaned = agentOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  parsed = {\n    intent: 'Other',\n    sentiment: 'Neutral',\n    summary: 'วิเคราะห์ไม่ได้',\n    reply_message: 'ขอโทษค่ะ ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้งนะคะ 🙏',\n    entities: {},\n    auto_tags: []\n  };\n}\n\nreturn [{\n  json: {\n    ...prev,\n    intent:        parsed.intent        || 'Other',\n    sentiment:     parsed.sentiment     || 'Neutral',\n    summary:       parsed.summary       || '',\n    reply_message: parsed.reply_message || '',\n    entities:      parsed.entities      || {},\n    auto_tags:     Array.isArray(parsed.auto_tags) ? parsed.auto_tags.join(',') : '',\n    analyzedAt:    new Date().toISOString()\n  }\n}];"
+      },
+      "id": "n14",
+      "name": "Parse Agent Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond2",
+              "leftValue": "={{ $json.sentiment }}",
+              "rightValue": "Negative",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n15",
+      "name": "Is Negative?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "resource": "message",
+        "operation": "push",
+        "to": "={{ $env.LINE_ADMIN_USER_ID }}",
+        "messages": {
+          "message": [
+            {
+              "type": "text",
+              "text": "=🚨 High Priority!\n\n👤 ลูกค้า: {{ $json.userId }}\n💬 ข้อความ: {{ $json.content }}\n🏷 Intent: {{ $json.intent }}\n😤 Sentiment: {{ $json.sentiment }}\n📝 สรุป: {{ $json.summary }}\n\nกรุณาติดต่อกลับด่วน!"
+            }
+          ]
+        }
+      },
+      "id": "n16",
+      "name": "Alert Admin",
+      "type": "n8n-nodes-base.line",
+      "typeVersion": 1,
+      "position": [
+        1580,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond3",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "Purchase",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n17",
+      "name": "Is Purchase?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1580,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "={{ $env.GOOGLE_SHEET_ID }}",
+        "sheetName": "Orders",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "userId": "={{ $json.userId }}",
+            "messageId": "={{ $json.messageId }}",
+            "intent": "Purchase",
+            "sentiment": "={{ $json.sentiment }}",
+            "summary": "={{ $json.summary }}",
+            "product_name": "={{ $json.entities.product_name }}",
+            "quantity": "={{ $json.entities.quantity }}",
+            "recipient_name": "={{ $json.entities.recipient_name }}",
+            "shipping_address": "={{ $json.entities.shipping_address }}",
+            "phone_number": "={{ $json.entities.phone_number }}",
+            "auto_tags": "={{ $json.auto_tags || '#Pending_Payment' }}",
+            "status": "Pending_Payment",
+            "payment_amount": "={{ $json.entities.payment_amount }}",
+            "tracking_number": ""
+          }
+        },
+        "options": {}
+      },
+      "id": "n18",
+      "name": "Save Order to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1800,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond4",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "Inquiry",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n19",
+      "name": "Is Inquiry?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "={{ $env.GOOGLE_SHEET_ID }}",
+        "sheetName": "Inquiries",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "userId": "={{ $json.userId }}",
+            "messageId": "={{ $json.messageId }}",
+            "intent": "Inquiry",
+            "content": "={{ $json.content }}",
+            "summary": "={{ $json.summary }}",
+            "product_name": "={{ $json.entities.product_name }}",
+            "auto_tags": "={{ $json.auto_tags }}",
+            "status": "Answered"
+          }
+        },
+        "options": {}
+      },
+      "id": "n20",
+      "name": "Save Inquiry to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2020,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "={{ $env.GOOGLE_SHEET_ID }}",
+        "sheetName": "Complaints",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "userId": "={{ $json.userId }}",
+            "messageId": "={{ $json.messageId }}",
+            "intent": "Complaint",
+            "content": "={{ $json.content }}",
+            "summary": "={{ $json.summary }}",
+            "auto_tags": "#High_Priority",
+            "status": "Open"
+          }
+        },
+        "options": {}
+      },
+      "id": "n21",
+      "name": "Save Complaint to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2020,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "resource": "message",
+        "operation": "reply",
+        "replyToken": "={{ $('Pre-process Payload').first().json.replyToken }}",
+        "messages": {
+          "message": [
+            {
+              "type": "text",
+              "text": "={{ $('Parse Agent Response').first().json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "id": "n22",
+      "name": "Reply to Customer",
+      "type": "n8n-nodes-base.line",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK"
+      },
+      "id": "n23",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2460,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * *"
+            }
+          ]
+        }
+      },
+      "id": "n24",
+      "name": "Daily Cron 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        1000
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": "={{ $env.GOOGLE_SHEET_ID }}",
+        "sheetName": "Orders",
+        "options": {}
+      },
+      "id": "n25",
+      "name": "Fetch Orders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        460,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": "={{ $env.GOOGLE_SHEET_ID }}",
+        "sheetName": "Payments",
+        "options": {}
+      },
+      "id": "n26",
+      "name": "Fetch Payments",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        460,
+        1060
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date().toISOString().split('T')[0];\n\nconst orders   = $('Fetch Orders').all().map(r => r.json);\nconst payments = $('Fetch Payments').all().map(r => r.json);\n\nconst todayOrders   = orders.filter(r   => (r.timestamp || '').startsWith(today));\nconst todayPayments = payments.filter(r => (r.timestamp || '').startsWith(today));\n\nconst totalRevenue = todayPayments\n  .filter(r => r.is_duplicate !== 'true' && r.is_duplicate !== true)\n  .reduce((sum, r) => sum + (parseFloat(r.payment_amount) || 0), 0);\n\nconst orderCount     = todayOrders.length;\nconst paidCount      = todayPayments.length;\nconst duplicateCount = todayPayments.filter(r => r.is_duplicate === 'true' || r.is_duplicate === true).length;\nconst pendingList    = todayOrders.filter(r => (r.auto_tags || '').includes('Pending_Payment'));\nconst highPriority   = todayOrders.filter(r => (r.auto_tags || '').includes('High_Priority')).length;\n\nconst productCount = {};\ntodayOrders.forEach(r => {\n  if (r.product_name) productCount[r.product_name] = (productCount[r.product_name] || 0) + 1;\n});\nconst topProducts = Object.entries(productCount)\n  .sort((a, b) => b[1] - a[1]).slice(0, 3)\n  .map(([name, count]) => '• ' + name + ' (' + count + ' ออเดอร์)').join('\\n') || 'ไม่มีข้อมูล';\n\nconst pendingNames = pendingList\n  .map(r => '• ' + (r.recipient_name || r.userId)).join('\\n') || 'ไม่มี';\n\nconst message = '📊 ChatBuddy รายงานประจำวัน\\n'\n  + '📅 ' + today + '\\n'\n  + '━━━━━━━━━━━━━━━\\n'\n  + '💰 ยอดขายรวม: ' + totalRevenue.toLocaleString() + ' บาท\\n'\n  + '📦 ออเดอร์: ' + orderCount + ' รายการ\\n'\n  + '✅ ชำระแล้ว: ' + paidCount + ' รายการ\\n'\n  + '⚠️ สลิปซ้ำ: ' + duplicateCount + ' รายการ\\n'\n  + '⏳ รอชำระ: ' + pendingList.length + ' รายการ\\n'\n  + '🚨 High Priority: ' + highPriority + ' เคส\\n'\n  + '━━━━━━━━━━━━━━━\\n'\n  + '🏆 สินค้าขายดีวันนี้:\\n' + topProducts + '\\n'\n  + '━━━━━━━━━━━━━━━\\n'\n  + '⚠️ ลูกค้ารอชำระ:\\n' + pendingNames;\n\nreturn [{ json: { message } }];"
+      },
+      "id": "n27",
+      "name": "Build Daily Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        1010
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "resource": "message",
+        "operation": "push",
+        "to": "={{ $env.LINE_ADMIN_USER_ID }}",
+        "messages": {
+          "message": [
+            {
+              "type": "text",
+              "text": "={{ $json.message }}"
+            }
+          ]
+        }
+      },
+      "id": "n28",
+      "name": "Send Daily Brief",
+      "type": "n8n-nodes-base.line",
+      "typeVersion": 1,
+      "position": [
+        920,
+        1010
+      ]
+    },
+    {
+      "parameters": {
+        "name": "get_order_status",
+        "description": "ดึงสถานะออเดอร์ทั้งหมดของลูกค้าจาก Google Sheets Orders Sheet โดยค้นหาจากชื่อผู้รับ (recipient_name) หรือเบอร์โทร (phone_number) ที่ลูกค้าพิมพ์มา คืนค่า: product_name, quantity, status, tracking_number, payment_amount ทุกออเดอร์ที่ตรง",
+        "workflowId": "={{ $env.ORDER_STATUS_WORKFLOW_ID }}",
+        "workflowInputs": {
+          "schema": [
+            {
+              "key": "search_query",
+              "type": "string",
+              "description": "ชื่อผู้รับหรือเบอร์โทรที่ลูกค้าพิมพ์มา เช่น 'สมชาย' หรือ '0812345678'"
+            }
+          ]
+        }
+      },
+      "id": "n29",
+      "name": "Tool get order status",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond5",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "Status_Check",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n30",
+      "name": "Is Status Check?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2020,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": "={{ $env.GOOGLE_SHEET_ID }}",
+        "sheetName": "Orders",
+        "options": {}
+      },
+      "id": "n31",
+      "name": "Fetch Orders for Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2240,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Pre-process Payload').first().json;\nconst replyToken = prev.replyToken;\nconst allOrders = $input.all().map(r => r.json);\n\n// Get search_query from agent parsed output\nconst agentData = $('Parse Agent Response').first().json;\nconst searchQuery = (agentData.entities && agentData.entities.search_query\n  ? agentData.entities.search_query : '').toLowerCase().trim();\n\nif (!searchQuery) {\n  return [{ json: {\n    replyToken,\n    reply_message: 'กรุณาแจ้งชื่อผู้รับ หรือเบอร์โทรที่ใช้สั่งสินค้าด้วยนะคะ 🙏'\n  }}];\n}\n\n// Search by recipient_name or phone_number (partial, case-insensitive)\nconst matched = allOrders.filter(r => {\n  const name  = (r.recipient_name || '').toLowerCase();\n  const phone = (r.phone_number   || '').toLowerCase();\n  return name.includes(searchQuery) || phone.includes(searchQuery);\n}).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));\n\nif (!matched.length) {\n  return [{ json: {\n    replyToken,\n    reply_message: 'ขออภัยค่ะ ไม่พบออเดอร์ของ \"' + searchQuery + '\" ในระบบ\\n'\n      + 'กรุณาตรวจสอบชื่อหรือเบอร์โทรอีกครั้ง หรือติดต่อแอดมินได้เลยนะคะ 🙏'\n  }}];\n}\n\nconst statusEmoji = {\n  Pending_Payment: '⏳',\n  Paid: '💳',\n  Shipped: '🚚',\n  Delivered: '✅'\n};\n\nlet msg = '📦 สถานะออเดอร์ทั้งหมด (' + matched.length + ' รายการ)\\n';\nmsg += '━━━━━━━━━━━━━━━\\n';\n\nmatched.forEach((o, i) => {\n  const emoji = statusEmoji[o.status] || '📋';\n  const date  = o.timestamp ? o.timestamp.split('T')[0] : '-';\n  msg += (i + 1) + '. ' + (o.product_name || '-') + ' x' + (o.quantity || '1') + '\\n';\n  msg += '   ' + emoji + ' สถานะ: ' + (o.status || '-') + '\\n';\n  if (o.tracking_number) msg += '   🔍 Tracking: ' + o.tracking_number + '\\n';\n  if (o.status === 'Pending_Payment') {\n    msg += '   💰 ยอดที่ต้องชำระ: ' + (o.payment_amount || 'กรุณาสอบถาม') + ' บาท\\n';\n  }\n  msg += '   📅 วันที่สั่ง: ' + date + '\\n';\n  if (i < matched.length - 1) msg += '───────────\\n';\n});\n\nmsg += '━━━━━━━━━━━━━━━\\n';\nmsg += 'มีข้อสงสัยเพิ่มเติมสอบถามได้เลยนะคะ 😊';\n\nreturn [{ json: { replyToken, reply_message: msg } }];"
+      },
+      "id": "n32",
+      "name": "Build Status Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2460,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "resource": "message",
+        "operation": "reply",
+        "replyToken": "={{ $json.replyToken }}",
+        "messages": {
+          "message": [
+            {
+              "type": "text",
+              "text": "={{ $json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "id": "n33",
+      "name": "Reply Status",
+      "type": "n8n-nodes-base.line",
+      "typeVersion": 1,
+      "position": [
+        2680,
+        720
+      ]
+    }
+  ],
+  "connections": {
+    "LINE Webhook": {
+      "main": [
+        [
+          {
+            "node": "Pre-process Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-process Payload": {
+      "main": [
+        [
+          {
+            "node": "Is Image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Image?": {
+      "main": [
+        [
+          {
+            "node": "Download Image from LINE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image from LINE": {
+      "main": [
+        [
+          {
+            "node": "Thunder: Verify Slip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thunder: Verify Slip": {
+      "main": [
+        [
+          {
+            "node": "Parse Slip Matched",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Slip Not Matched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Slip Matched": {
+      "main": [
+        [
+          {
+            "node": "Save Payment to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Payment to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Reply Slip OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Slip OK": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Slip Not Matched": {
+      "main": [
+        [
+          {
+            "node": "Reply Slip Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Slip Failed": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool get product info": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Is Negative?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Negative?": {
+      "main": [
+        [
+          {
+            "node": "Alert Admin",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Purchase?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Admin": {
+      "main": [
+        [
+          {
+            "node": "Is Purchase?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Purchase?": {
+      "main": [
+        [
+          {
+            "node": "Save Order to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Inquiry?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Order to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Reply to Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Inquiry?": {
+      "main": [
+        [
+          {
+            "node": "Save Inquiry to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Status Check?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Inquiry to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Reply to Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Complaint to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Reply to Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply to Customer": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Cron 20:00": {
+      "main": [
+        [
+          {
+            "node": "Fetch Orders",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Payments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Orders": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Payments": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Daily Report": {
+      "main": [
+        [
+          {
+            "node": "Send Daily Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool get order status": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Status Check?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Orders for Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Complaint to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Orders for Status": {
+      "main": [
+        [
+          {
+            "node": "Build Status Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Status Reply": {
+      "main": [
+        [
+          {
+            "node": "Reply Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Status": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "chatbuddy-v5.1",
+  "tags": [
+    "ChatBuddy",
+    "LINE",
+    "Thunder",
+    "AI Agent",
+    "E-commerce"
+  ]
+}

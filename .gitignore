@@ -1,0 +1,4 @@
+n8n_data/
+*.sqlite
+*.log
+# Ignore the .env file if it exists     

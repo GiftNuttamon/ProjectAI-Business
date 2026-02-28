@@ -1,0 +1,2133 @@
+{
+  "name": "ChatBuddy Insights v5 - Status Check (by name/phone)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbuddy-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1eb9a744-c60a-4155-bd69-a2f9f3532b57",
+      "name": "LINE Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        -832,
+        368
+      ],
+      "webhookId": "b6da7904-80e5-439c-9179-4d95620cc2cd"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst events = body.events || [];\nif (!events.length) return [{ json: { skip: true } }];\n\nconst event = events[0];\nconst userId     = event.source?.userId || 'unknown';\nconst msgType    = event.message?.type  || 'unknown';\nconst replyToken = event.replyToken || '';\n\nlet content = '';\nlet imageId  = null;\n\nif (msgType === 'text') {\n  content = event.message.text;\n} else if (msgType === 'image') {\n  content = '[IMAGE]';\n  imageId = event.message.id;\n} else if (msgType === 'location') {\n  content = '[LOCATION] lat:' + event.message.latitude + ' lng:' + event.message.longitude + ' addr:' + event.message.address;\n}\n\nreturn [{\n  json: {\n    userId,\n    messageId: event.message?.id || '',\n    messageType: msgType,\n    content,\n    imageId,\n    replyToken,\n    timestamp: new Date(event.timestamp).toISOString()\n  }\n}];"
+      },
+      "id": "a92e8a9d-114a-48e2-825f-f1ff4db5f7c1",
+      "name": "Pre-process Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -624,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.messageType }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f84a3e74-8c4c-4026-b126-d505116062f3",
+      "name": "Is Image?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * *"
+            }
+          ]
+        }
+      },
+      "id": "a4ba41d1-7093-4366-b166-8802384d6f73",
+      "name": "Daily Cron 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -416,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "13de0832-1645-4048-b2e1-35077f6f8361",
+      "name": "Fetch Orders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -224,
+        784
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1036159127,
+          "mode": "list",
+          "cachedResultName": "Payments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=1036159127"
+        },
+        "options": {}
+      },
+      "id": "5a552432-0a4f-46ba-b113-ca9d1b9f7e6c",
+      "name": "Fetch Payments",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -64,
+        784
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date().toISOString().split('T')[0];\n\nconst orders   = $('Fetch Orders').all().map(r => r.json);\nconst payments = $('Fetch Payments').all().map(r => r.json);\n\nconst todayOrders   = orders.filter(r   => (r.timestamp || '').startsWith(today));\nconst todayPayments = payments.filter(r => (r.timestamp || '').startsWith(today));\n\nconst totalRevenue = todayPayments\n  .filter(r => r.is_duplicate !== 'true' && r.is_duplicate !== true)\n  .reduce((sum, r) => sum + (parseFloat(r.payment_amount) || 0), 0);\n\nconst orderCount     = todayOrders.length;\nconst paidCount      = todayPayments.length;\nconst duplicateCount = todayPayments.filter(r => r.is_duplicate === 'true' || r.is_duplicate === true).length;\nconst pendingList    = todayOrders.filter(r => (r.auto_tags || '').includes('Pending_Payment'));\nconst highPriority   = todayOrders.filter(r => (r.auto_tags || '').includes('High_Priority')).length;\n\nconst productCount = {};\ntodayOrders.forEach(r => {\n  if (r.product_name) productCount[r.product_name] = (productCount[r.product_name] || 0) + 1;\n});\nconst topProducts = Object.entries(productCount)\n  .sort((a, b) => b[1] - a[1]).slice(0, 3)\n  .map(([name, count]) => '• ' + name + ' (' + count + ' ออเดอร์)').join('\\n') || 'ไม่มีข้อมูล';\n\nconst pendingNames = pendingList\n  .map(r => '• ' + (r.recipient_name || r.userId)).join('\\n') || 'ไม่มี';\n\nconst message = '📊 ChatBuddy รายงานประจำวัน\\n'\n  + '📅 ' + today + '\\n'\n  + '━━━━━━━━━━━━━━━\\n'\n  + '💰 ยอดขายรวม: ' + totalRevenue.toLocaleString() + ' บาท\\n'\n  + '📦 ออเดอร์: ' + orderCount + ' รายการ\\n'\n  + '✅ ชำระแล้ว: ' + paidCount + ' รายการ\\n'\n  + '⚠️ สลิปซ้ำ: ' + duplicateCount + ' รายการ\\n'\n  + '⏳ รอชำระ: ' + pendingList.length + ' รายการ\\n'\n  + '🚨 High Priority: ' + highPriority + ' เคส\\n'\n  + '━━━━━━━━━━━━━━━\\n'\n  + '🏆 สินค้าขายดีวันนี้:\\n' + topProducts + '\\n'\n  + '━━━━━━━━━━━━━━━\\n'\n  + '⚠️ ลูกค้ารอชำระ:\\n' + pendingNames;\n\nreturn [{ json: { message } }];"
+      },
+      "id": "e99a5669-a167-40d5-acf8-8f624ee71585",
+      "name": "Build Daily Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ดึง Output จาก AI Agent\nconst agentOutput = $input.first().json.output || $input.first().json.text || '';\n// ดึง Data เดิมจาก Webhook/Payload ก่อนหน้า\nconst prev = $('Pre-process Payload').first().json;\n\nlet parsed;\ntry {\n  // ทำความสะอาด String ที่อาจมี Markdown JSON ติดมา\n  const cleaned = agentOutput.replace(/```json/g, '').replace(/```/g, '').trim();\n  parsed = JSON.parse(cleaned);\n} catch(e) {\n  // กรณี Parse JSON ไม่สำเร็จ ให้ตั้งค่า Default\n  parsed = {\n    intent: 'Other',\n    sentiment: 'Neutral',\n    status: 'Completed', // Default status\n    summary: 'วิเคราะห์ไม่ได้',\n    reply_message: 'ขอโทษค่ะ ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้งนะคะ 🙏',\n    entities: { total_cost: '' }\n  };\n}\n\n// ส่งค่ากลับออกไปเพื่อใช้ใน Node ต่อๆ ไป\nreturn [{\n  json: {\n    ...prev,\n    intent:        parsed.intent        || 'Other',\n    sentiment:     parsed.sentiment     || 'Neutral',\n    status:        parsed.status        || 'Completed', // เพิ่มฟิลด์ status ตรงนี้\n    summary:       parsed.summary       || '',\n    reply_message: parsed.reply_message || '',\n    entities:      Object.assign({}, parsed.entities || {}, { total_cost: (parsed.entities && parsed.entities.total_cost) || '' }),\n    // ลบ auto_tags ออกตามที่ต้องการ\n    analyzedAt:    new Date().toISOString()\n  }\n}];"
+      },
+      "id": "286c6732-1ac9-4a44-8060-70f56fe62c10",
+      "name": "Parse Agent Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "model": "arcee-ai/trinity-large-preview:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        576
+      ],
+      "id": "520683f9-3c3b-4861-b826-f471c7a25c74",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "ajXezmSIrRntLDam",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond2",
+              "leftValue": "={{ $json.sentiment }}",
+              "rightValue": "Negative",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bde2fdbc-659e-4132-a033-e5bfcabdbc36",
+      "name": "Is Negative?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        464,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.content }}",
+        "options": {
+          "systemMessage": "คุณคือ ChatBuddy AI ผู้ช่วยแม่ค้าออนไลน์ไทยที่เก่งกาจและสุภาพ หน้าที่ของคุณคือวิเคราะห์ความต้องการของลูกค้าและตอบกลับในรูปแบบ JSON ที่กำหนดเท่านั้น\n\n**กฎการพิจารณา Intent / Status และการใช้เครื่องมือ:**\n\n1. **Inquiry (สอบถามข้อมูล):** หากถามเกี่ยวกับรายละเอียดสินค้า ราคา สต็อก สี หรือโปรโมชัน\n   - **Status:** ตั้งเป็น \"Answered\"\n   - **Tool:** ต้องใช้ Tool `Get_Product` โดยระบุชื่อสินค้าใน `search_query` เพื่อดึงข้อมูลนำมาตอบลูกค้าใน `reply_message` เสมอ\n\n2. **Status_Check (เช็คสถานะพัสดุ):** หากลูกค้าถามถึงสถานะการส่ง การติดตามเลขพัสดุ\n   - **Status:** ตั้งเป็น \"Checked\"\n   - **กรณีมีข้อมูล (ชื่อ หรือ เบอร์โทร):** ให้ใช้ Tool `Get_Order` โดยนำข้อมูลนั้นใส่ใน `search_query` เพื่อดึงสถานะมาตอบลูกค้า\n   - **กรณีไม่มีข้อมูล (ถามลอยๆ เช่น \"ส่งของยังคะ\", \"ขอเลขพัสดุหน่อย\"):** \n     - **ไม่ต้องเรียก Tool ใดๆ**\n     - **search_query:** ให้ใส่เป็นค่าว่าง \"\" (Empty string)\n     - **reply_message:** ให้ตอบกลับเพื่อขอข้อมูลเพิ่ม เช่น \"รบกวนขอทราบชื่อ-นามสกุล หรือเบอร์โทรศัพท์ที่ใช้สั่งซื้อ เพื่อให้แม่ค้าเช็คสถานะพัสดุให้ได้เลยค่ะ 😊\"\n\n3. **Purchase (สั่งซื้อ):** หากลูกค้าบอกว่าต้องการสั่งสินค้า\n   - **Status:** ตั้งเป็น \"Pending\"\n   - **Entities:** พยายามดึงข้อมูล `product_name`, `quantity`, `total_cost`, `recipient_name`, `shipping_address`, `phone_number` ให้ได้มากที่สุด \n   - **สำคัญมาก (การขอข้อมูล):** คุณต้องตรวจสอบด้วยตัวเองว่าลูกค้าได้ให้ `recipient_name` (ชื่อผู้รับ), `phone_number` (เบอร์โทร) และ `shipping_address` (ที่อยู่จัดส่ง) ครบถ้วนหรือไม่\n     - หากยังขาดข้อมูล: ใน `reply_message` ให้กล่าวตอบรับการสั่งซื้อและ \"ถามขอเฉพาะข้อมูลส่วนที่ขาดไปให้ครบถ้วนอย่างสุภาพ\"\n     - หากข้อมูลครบถ้วน: ใน `reply_message` แจ้งว่า \"ได้รับข้อมูลครบถ้วนแล้วค่ะ เดี๋ยวแม่ค้าตรวจสอบแล้วจะรีบแจ้งสรุปยอดให้ทราบทันทีค่ะ\"\n\n4. **Complaint (ลูกค้าไม่พอใจ / ยกเลิก / เคลม):** หากลูกค้าบ่นสินค้าพัง ส่งช้า ขอคืนเงิน ขอยกเลิก หรือพูดด้วยอารมณ์/คำหยาบ\n   - **Status:** ตั้งเป็น \"Open\"\n   - **Sentiment:** ต้องตั้งเป็น \"Negative\" เสมอ\n   - **reply_message:** \"ต้องขออภัยในความชล่าช้าและความไม่สะดวกด้วยนะคะ เดี๋ยวแม่ค้าจะรีบตรวจสอบและแก้ไขให้อย่างเร่งด่วนที่สุดเลยค่ะ\" (ห้ามเถียงลูกค้า)\n\n5. **Payment (แจ้งโอนเงินแต่ลืมสลิป):** หากลูกค้าบอกว่า \"โอนแล้ว\" หรือทำนองแจ้งยอดเงิน แต่ข้อความมาเป็นแบบ Text โดยที่ไม่มีรูปภาพ\n   - **Intent:** ให้จัดเป็น \"Other\" และ **Status:** ตั้งเป็น \"Completed\"\n   - **reply_message:** \"ขอบคุณที่อุดหนุนนะคะ 🙏 รบกวนลูกค้าแนบรูปภาพสลิปการโอนเงินเข้ามาให้แม่ค้าสักนิดนึงนะคะ เพื่อความรวดเร็วในการยืนยันรับยอดเข้าระบบค่ะ\"\n\n6. **Other (อื่นๆ):** การทักทาย, ขอบคุณ, คุยเล่นทั่วไป\n   - **Status:** ตั้งเป็น \"Completed\"\n   - ตอบกลับตามมารยาทแบบแม่ค้าออนไลน์ใจดี\n\n**รูปแบบการตอบกลับ (Strict JSON Output):**\nตอบเป็น JSON Object เท่านั้น ห้ามมีข้อความเกริ่นนำ ปิดท้าย หรือการครอบ Markdown ด้านนอก:\n{\n  \"intent\": \"Purchase | Inquiry | Status_Check | Complaint | Other\",\n  \"sentiment\": \"Positive | Neutral | Negative\",\n  \"status\": \"Open | Answered | Pending | Checked | Completed\",\n  \"summary\": \"สรุปเนื้อหาที่ลูกค้าพิมพ์มาอย่างสั้นกระชับ 1 ประโยค\",\n  \"reply_message\": \"ข้อความตอบกลับภาษาไทย สไตล์แม่ค้าออนไลน์ใจดี มีหางเสียง (คะ/ค่ะ)\",\n  \"entities\": {\n    \"product_name\": \"ชื่อสินค้า หรือ \\\"\\\"\",\n    \"quantity\": \"จำนวน หรือ \\\"\\\"\",\n    \"total_cost\": \"ราคารวม หรือ \\\"\\\"\",\n    \"recipient_name\": \"ชื่อผู้รับ หรือ \\\"\\\"\",\n    \"shipping_address\": \"ที่อยู่จัดส่ง หรือ \\\"\\\"\",\n    \"phone_number\": \"เบอร์โทรศัพท์ หรือ \\\"\\\"\",\n    \"search_query\": \"คำที่ใช้ค้นหาใน Tool หรือ \\\"\\\"\"\n  }\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -208,
+        336
+      ],
+      "id": "e077deec-f95b-4a2f-b7a1-6488916a7138",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "ใช้สำหรับค้นหาข้อมูลสินค้า ราคา และสต็อก โดยรับค่าเป็นชื่อสินค้า",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2115791625,
+          "mode": "list",
+          "cachedResultName": "Products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=2115791625"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "=product_name",
+              "lookupValue": "={{ $fromAI('search_query') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -64,
+        576
+      ],
+      "id": "c578cba2-a7df-469f-a5a4-84bafeb002ff",
+      "name": "Get_Product",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "ใช้สำหรับเช็คสถานะออเดอร์ โดยรับค่าเป็นชื่อลูกค้าหรือเบอร์โทรศัพท์",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "recipient_name",
+              "lookupValue": "={{ $fromAI('search_query') }}"
+            },
+            {
+              "lookupColumn": "phone_number",
+              "lookupValue": "={{ $fromAI('search_query') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        48,
+        576
+      ],
+      "id": "1321edd8-3467-4c5e-83bf-1220214d4d09",
+      "name": "Get_Order",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $json.imageId }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ \"tEiq2b6lXG+eRO9HOgKIWr4faTJsM3zZe3GhjbvvP5TvXZ/JRAY06e51Kb0HNIRg4CFtgG8mAxh75n3NuQZWbPMRykw9S3HT//fkuKzohPDGSPBDiacF1DYtagZxKcDvHZKrqBZicOiURoaOYyXRlwdB04t89/1O/w1cDnyilFU=\" }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "2ac037f7-2bc4-4569-857f-cda019ebca0b",
+      "name": "Download Image from LINE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -272,
+        80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "5PcK4CaVq2G2zA6h",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('LINE Webhook').item.json.body.events[0].replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "สลิปนี้มีการใช้ซ้ำแล้ว รบกวนลูกค้าส่งใหม่ด้วยค่ะ"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        496,
+        -192
+      ],
+      "id": "f0eea2f3-a5be-4eb6-bb2e-83470d3b9c72",
+      "name": "ReplySlipDuplicate",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "data.image",
+        "name": "={{ $('Download Image from LINE').item.json.imageId }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1X9c2yrkwMhnMlfTIyNgArFlmJWIn3xVe",
+          "mode": "list",
+          "cachedResultName": "slip",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1X9c2yrkwMhnMlfTIyNgArFlmJWIn3xVe"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        16,
+        -96
+      ],
+      "id": "c749e1b2-292c-43fe-ba46-30bb74bd3e39",
+      "name": "SavedSlip",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "JFAdMis5nGmKy9Gx",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('Is Image?').item.json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "สลิปไม่ตรงกับชื่อร้าน กรุณาส่งสลิปใหม่ค่ะ"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        480,
+        144
+      ],
+      "id": "d52b9d9f-617b-43b3-92ae-1afbf4e3970b",
+      "name": "ReplySlipFail",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "verifyByImage",
+        "checkDuplicate": true,
+        "additionalOptions": {}
+      },
+      "type": "n8n-nodes-easyslip.easySlip",
+      "typeVersion": 1,
+      "position": [
+        0,
+        80
+      ],
+      "id": "b5294858-c165-4616-94ed-a7137579258d",
+      "name": "Verify by image a bank slip",
+      "alwaysOutputData": false,
+      "credentials": {
+        "easySlipApi": {
+          "id": "hLItk0ix9sjeY052",
+          "name": "EasySlip account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d2e821d4-e79b-47ad-b5d4-2fa78603d0f3",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "duplicate_slip",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        256,
+        -32
+      ],
+      "id": "18a7205f-1343-46eb-b7de-270dbb681319",
+      "name": "IfDuplicate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Pre-process Payload').first().json;\nreturn [{\n  json: {\n    ...prev,\n    intent: 'Payment_Proof',\n    sentiment: 'Neutral',\n    summary: 'สลิปไม่ตรงกับเงื่อนไขที่ตั้งไว้',\n    entities: {},\n    auto_tags: '#Slip_Not_Matched',\n    slipValid: false,\n    isDuplicate: false\n  }\n}];"
+      },
+      "id": "5aa08a39-e587-425c-ab5e-9851dfa6a760",
+      "name": "Parse Slip Not Matched",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "userId",
+              "lookupValue": "={{ $('Is Image?').item.json.userId }}"
+            },
+            {
+              "lookupColumn": "status",
+              "lookupValue": "Pending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        496,
+        -16
+      ],
+      "id": "6e3b503e-0be8-427e-b3cf-0ff92295ff50",
+      "name": "GetOrderID",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1036159127,
+          "mode": "list",
+          "cachedResultName": "Payments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=1036159127"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Is Image?').item.json.timestamp }}",
+            "userId": "={{ $('Is Image?').item.json.userId }}",
+            "messageId": "={{ $('Is Image?').item.json.messageId }}",
+            "intent": "Purchased",
+            "payment_amount": "={{ $('IfDuplicate').item.json.data.amount.amount }}",
+            "sender_name": "={{ $('IfDuplicate').item.json.data.sender.account.name.th }}",
+            "receiver_name": "={{ $('IfDuplicate').item.json.data.receiver.account.name.th }}",
+            "receiver_bank_id": "={{ $('IfDuplicate').item.json.data.receiver.bank.id }}",
+            "receiver_bank_name": "={{ $('IfDuplicate').item.json.data.receiver.bank.name }}",
+            "transaction_date": "={{ $('IfDuplicate').item.json.data.date }}",
+            "reference": "={{ $('IfDuplicate').item.json.data.transRef }}",
+            "is_duplicate": "={{ $('IfDuplicate').item.json.message }}",
+            "status": "Checked",
+            "imageid": "={{ $('Is Image?').item.json.imageId }}",
+            "orderid": "={{ $json.orderid }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payment_amount",
+              "displayName": "payment_amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sender_name",
+              "displayName": "sender_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "receiver_name",
+              "displayName": "receiver_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "receiver_bank_id",
+              "displayName": "receiver_bank_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "receiver_bank_name",
+              "displayName": "receiver_bank_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "transaction_date",
+              "displayName": "transaction_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reference",
+              "displayName": "reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "auto_tags",
+              "displayName": "auto_tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "is_duplicate",
+              "displayName": "is_duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "imageid",
+              "displayName": "imageid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "orderid",
+              "displayName": "orderid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f0d9d593-1cb7-4056-96ef-0f34b789374c",
+      "name": "Save Payment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        688,
+        -16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{ $('Pre-process Payload').item.json.userId }}",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "={{ $('LINE Webhook').item.json.body.events[0].message.quoteToken }}",
+              "text": "=รับยอดค่ะ"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -16
+      ],
+      "id": "7493f6b8-cf22-433f-b317-2175b0d56e7d",
+      "name": "PaymentComplete",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "multicast",
+        "to": "U2c6b4fa5054fe79399fc967c486648a7,U4ad385f79cb75da89c36120e886f680b",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $json.message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        368,
+        784
+      ],
+      "id": "52b85b21-d950-40b3-a4d9-b383169faf16",
+      "name": "Line Messaging",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 150032561,
+          "mode": "list",
+          "cachedResultName": "Log_Others",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=150032561"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "summary": "={{ $('Parse Agent Response').item.json.summary }}",
+            "status": "null",
+            "sentiment": "={{ $('Parse Agent Response').item.json.sentiment }}",
+            "timestamp": "={{ $('Parse Agent Response').item.json.timestamp }}",
+            "userId": "={{ $('Parse Agent Response').item.json.userId }}",
+            "content": "={{ $('Parse Agent Response').item.json.content }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ac8476ce-5d77-4055-9afa-ecd4b5d9179d",
+      "name": "Log_Others",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1168,
+        976
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('Parse Agent Response').item.json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "=",
+              "text": "ขออภัยค่ะ แม่ค้าไม่เข้าใจคำถาม รบกวนสอบถามเรื่องสินค้าได้เลยนะคะ 🙏"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        976
+      ],
+      "id": "80df93de-b2af-46d7-aa84-a42e0297ca53",
+      "name": "Reply Other",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('Parse Agent Response').item.json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $('Parse Agent Response').item.json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        608
+      ],
+      "id": "5d1cf79f-069d-4ca1-8400-ac1ffda4c260",
+      "name": "Inquiry Reply",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentData = $('Parse Agent Response').first().json;\nconst prevData = $('Pre-process Payload').first().json;\n\nconst currentEntity = agentData.entities || {};\n\n// ยกเลิกการทวงข้อมูลจาก node นี้ เพราะจะให้ AI เป็นคนทวงและตอบกลับเอง\nlet isComplete = false;\nconst rName = currentEntity.recipient_name && currentEntity.recipient_name !== '-' ? currentEntity.recipient_name : \"\";\nconst pNum = currentEntity.phone_number && currentEntity.phone_number !== '-' ? currentEntity.phone_number : \"\";\nconst sAddr = currentEntity.shipping_address && currentEntity.shipping_address !== '-' ? currentEntity.shipping_address : \"\";\n\nif (rName && pNum && sAddr) {\n    isComplete = true;\n}\n\nreturn [{\n    json: {\n        replyToken: prevData.replyToken,\n        reply_message: agentData.reply_message || '', // ปล่อยผ่านข้อความของ AI ไปเลยเต็มๆ\n        is_complete: isComplete,\n        // ข้อมูลสำหรับลง Google Sheet\n        status: isComplete ? \"Completed\" : \"Incomplete\",\n        sentiment: agentData.sentiment,\n        recipient_name: rName || '-',\n        shipping_address: sAddr || '-',\n        phone_number: pNum || '-',\n        auto_tags: Array.isArray(agentData.auto_tags) ? agentData.auto_tags.join(',') : agentData.auto_tags\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        432
+      ],
+      "id": "046aea03-b41d-4456-8ed7-7f8f86a0deac",
+      "name": "Check & Remind"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond3",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "Purchase",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "084f6121-14f5-4acb-aeca-7d194d5520fe",
+      "name": "Is Purchase?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        624,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond4",
+              "leftValue": "={{ $('Parse Agent Response').item.json.intent }}",
+              "rightValue": "Inquiry",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5fff0344-8dce-4919-b8d8-289c45572e2c",
+      "name": "Is Inquiry?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        896,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "=U4ad385f79cb75da89c36120e886f680b",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "=",
+              "text": "=🚨 แจ้งเตือนเคสด่วน! ลูกค้าไม่พอใจ\n\n📌 สรุปปัญหา: \n{{ $json.summary }}\n\n---\nข้อความที่ระบบตอบลูกค้าไปเบื้องต้น:\n{{ $json.summary }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        832,
+        208
+      ],
+      "id": "1a1ea53a-728c-42e7-b660-ede13f899a61",
+      "name": "NotiAdmin",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1146702807,
+          "mode": "list",
+          "cachedResultName": "Complaints",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=1146702807"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "userId": "={{ $json.userId }}",
+            "messageId": "={{ $json.messageId }}",
+            "intent": "={{ $json.intent }}",
+            "content": "={{ $json.content }}",
+            "summary": "={{ $json.summary }}",
+            "auto_tags": "={{ $json.auto_tags }}",
+            "status": "Open"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "auto_tags",
+              "displayName": "auto_tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3363ca04-1add-4fb4-bf11-80982870fa44",
+      "name": "Save Complaint",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        656,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Parse Agent Response').item.json.timestamp }}",
+            "userId": "={{ $('Parse Agent Response').item.json.userId }}",
+            "messageId": "={{ $('Parse Agent Response').item.json.messageId }}",
+            "intent": "={{ $('Parse Agent Response').item.json.intent }}",
+            "sentiment": "={{ $('Parse Agent Response').item.json.sentiment }}",
+            "summary": "={{ $('Parse Agent Response').item.json.summary }}",
+            "product_name": "={{ $('Parse Agent Response').item.json.entities.product_name }}",
+            "quantity": "={{ $('Parse Agent Response').item.json.entities.quantity }}",
+            "recipient_name": "={{ $json.entities.recipient_name }}",
+            "shipping_address": "={{ $json.entities.shipping_address }}",
+            "phone_number": "={{ $json.entities.phone_number }}",
+            "auto_tags": "={{ $json.auto_tags }}",
+            "status": "รอชำระ",
+            "orderid": "=ORD-{{ $now.toFormat('yyyyMMdd') }}-{{ Math.floor(Math.random() * 9000) + 1000 }}",
+            "total_cost": "={{ $('Parse Agent Response').item.json.entities.total_cost }}"
+          },
+          "matchingColumns": [
+            "userId"
+          ],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "orderid",
+              "displayName": "orderid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_cost",
+              "displayName": "total_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "quantity",
+              "displayName": "quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recipient_name",
+              "displayName": "recipient_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "shipping_address",
+              "displayName": "shipping_address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "auto_tags",
+              "displayName": "auto_tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c795b4c7-8659-42d8-a488-9a782a8c06ca",
+      "name": "Save Order",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1088,
+        256
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1701096102,
+          "mode": "list",
+          "cachedResultName": "Inquiries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CZ8nuSdvUMpyLDLwFqhKmEaPKUVjYKVwslVxzRAD3AQ/edit#gid=1701096102"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Parse Agent Response').item.json.timestamp }}",
+            "userId": "={{ $('Parse Agent Response').item.json.userId }}",
+            "messageId": "={{ $('Parse Agent Response').item.json.messageId }}",
+            "intent": "={{ $('Parse Agent Response').item.json.intent }}",
+            "content": "={{ $('Parse Agent Response').item.json.content }}",
+            "summary": "={{ $('Parse Agent Response').item.json.summary }}",
+            "product_name": "={{ $('Parse Agent Response').item.json.entities.product_name }}",
+            "status": "Answered"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "60f5f109-026c-4103-ad49-157fe71cf944",
+      "name": "Save Inquiry",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1088,
+        608
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vd3sufepvDrLhCoO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{ $('Parse Agent Response').item.json.userId }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        432
+      ],
+      "id": "7befe563-a2ae-419d-88a2-19a84599bb14",
+      "name": "RequestInfo",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('Parse Agent Response').item.json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $('Parse Agent Response').item.json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        256
+      ],
+      "id": "f96c9c73-d256-410c-9fc7-5490a4618d42",
+      "name": "order Reply",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "32bf2ffc-df38-428b-9418-949fbfdaf375",
+              "leftValue": "={{ $('Parse Agent Response').item.json.entities.recipient_name }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "7ce94f21-4ba1-483e-9f64-a39b658b66f3",
+              "leftValue": "={{ $('Parse Agent Response').item.json.entities.shipping_address }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "dd6d20ee-764e-4133-ad9d-f1f49cb5d915",
+              "leftValue": "={{ $('Parse Agent Response').item.json.entities.phone_number }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        416
+      ],
+      "id": "84165e47-e5be-4321-8e2e-dd8741367c37",
+      "name": "IsInfo"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.userId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -176,
+        576
+      ],
+      "id": "dc0c561c-a409-47c7-a83b-4d20b339ece9",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        800
+      ],
+      "id": "fa5f633a-a8cc-47e6-add6-0c3b93bcdafe",
+      "name": "Reply Status",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "FjAdhPPFdYnmGu4J",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8c0296d9-f8fa-4b64-acee-1ad38f0567cf",
+              "leftValue": "={{ $('Parse Agent Response').item.json.intent }}",
+              "rightValue": "Status_Check",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        816
+      ],
+      "id": "6c382f65-445a-4c93-8f39-13c900ce9f3f",
+      "name": "Is Status Check?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "LINE Webhook": {
+      "main": [
+        [
+          {
+            "node": "Pre-process Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-process Payload": {
+      "main": [
+        [
+          {
+            "node": "Is Image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Image?": {
+      "main": [
+        [
+          {
+            "node": "Download Image from LINE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Cron 20:00": {
+      "main": [
+        [
+          {
+            "node": "Fetch Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Orders": {
+      "main": [
+        [
+          {
+            "node": "Fetch Payments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Payments": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Daily Report": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Is Negative?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Negative?": {
+      "main": [
+        [
+          {
+            "node": "Save Complaint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Purchase?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Product": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image from LINE": {
+      "main": [
+        [
+          {
+            "node": "Verify by image a bank slip",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SavedSlip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SavedSlip": {
+      "main": [
+        []
+      ]
+    },
+    "Verify by image a bank slip": {
+      "main": [
+        [
+          {
+            "node": "IfDuplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Slip Not Matched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfDuplicate": {
+      "main": [
+        [
+          {
+            "node": "ReplySlipDuplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetOrderID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Slip Not Matched": {
+      "main": [
+        [
+          {
+            "node": "ReplySlipFail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetOrderID": {
+      "main": [
+        [
+          {
+            "node": "Save Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Payment": {
+      "main": [
+        [
+          {
+            "node": "PaymentComplete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log_Others": {
+      "main": [
+        [
+          {
+            "node": "Reply Other",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check & Remind": {
+      "main": [
+        [
+          {
+            "node": "RequestInfo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Purchase?1": {
+      "main": [
+        [
+          {
+            "node": "IsInfo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Inquiry?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Inquiry?1": {
+      "main": [
+        [
+          {
+            "node": "Save Inquiry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Status Check?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Complaint": {
+      "main": [
+        [
+          {
+            "node": "NotiAdmin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Order": {
+      "main": [
+        [
+          {
+            "node": "order Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Inquiry": {
+      "main": [
+        [
+          {
+            "node": "Inquiry Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inquiry Reply": {
+      "main": [
+        []
+      ]
+    },
+    "IsInfo": {
+      "main": [
+        [
+          {
+            "node": "Save Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check & Remind",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Status Check?": {
+      "main": [
+        [
+          {
+            "node": "Reply Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log_Others",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "1f5a8320-b93d-4126-a48e-31071a58941c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "889dc5cf255609a131c6734028cba637f652222405db9a6d749a7e9e31cd0005"
+  },
+  "id": "9hxwJJXKYZBxfxLX",
+  "tags": []
+}
