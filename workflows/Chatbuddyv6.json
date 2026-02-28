@@ -348,7 +348,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ \"tEiq2b6lXG+eRO9HOgKIWr4faTJsM3zZe3GhjbvvP5TvXZ/JRAY06e51Kb0HNIRg4CFtgG8mAxh75n3NuQZWbPMRykw9S3HT//fkuKzohPDGSPBDiacF1DYtagZxKcDvHZKrqBZicOiURoaOYyXRlwdB04t89/1O/w1cDnyilFU=\" }}"
+              "value": "=Bearer {{ \"" }}"
             }
           ]
         },
