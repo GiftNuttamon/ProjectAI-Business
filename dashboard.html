@@ -3,303 +3,404 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatBuddy Insights Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>ChatBuddy Insights | Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap');
-        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .navbar-custom {
+            background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .card-custom {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            transition: transform 0.2s;
+            margin-bottom: 24px;
+            background: #fff;
+        }
+        .card-custom:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        }
+        /* KPI Gradients */
+        .bg-gradient-primary { background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); color: white; }
+        .bg-gradient-success { background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%); color: white; }
+        .bg-gradient-info { background: linear-gradient(135deg, #36b9cc 0%, #258391 100%); color: white; }
+        .bg-gradient-warning { background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%); color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .bg-gradient-danger { background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%); color: white; }
+        
+        .kpi-icon {
+            font-size: 2.8rem;
+            opacity: 0.3;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        .nav-tabs .nav-link { color: #555; font-weight: 500; border-radius: 10px 10px 0 0; }
+        .nav-tabs .nav-link.active { font-weight: 600; color: #0d6efd; border-bottom: 3px solid #0d6efd; }
     </style>
 </head>
-<body class="p-6">
+<body>
 
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-blue-800"><i class="fas fa-robot mr-2"></i>ChatBuddy Insights</h1>
-            <p class="text-gray-500">ระบบสรุปแชทและช่วยจำสำหรับแม่ค้าออนไลน์ (SME Scale)</p>
-        </div>
-        <div class="text-right">
-            <div id="data-status" class="text-sm font-semibold px-3 py-1 rounded-full bg-gray-200 text-gray-600">
-                Loading Data...
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3 mb-4">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" href="#"><i class="fa-solid fa-robot me-2"></i>ChatBuddy Insights</a>
+        <span class="text-white opacity-75" id="last-update">อัปเดตข้อมูลล่าสุด: กำลังโหลด...</span>
+    </div>
+</nav>
+
+<div class="container-fluid px-4">
+    
+    <div class="row">
+        <div class="col-xl col-md-6 mb-4">
+            <div class="card card-custom bg-gradient-success h-100 py-3 position-relative overflow-hidden">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">ยอดขายรวม (บาท)</div>
+                    <div class="h3 mb-0 fw-bold" id="kpi-revenue">0</div>
+                    <i class="fa-solid fa-wallet kpi-icon"></i>
+                </div>
             </div>
-            <p class="text-xs text-gray-400 mt-1" id="current-time"></p>
+        </div>
+        <div class="col-xl col-md-6 mb-4">
+            <div class="card card-custom bg-gradient-primary h-100 py-3 position-relative overflow-hidden">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">ออเดอร์ทั้งหมด</div>
+                    <div class="h3 mb-0 fw-bold" id="kpi-orders">0</div>
+                    <i class="fa-solid fa-cart-shopping kpi-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-6 mb-4">
+            <div class="card card-custom bg-gradient-info h-100 py-3 position-relative overflow-hidden">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">ลูกค้าในระบบ (Users)</div>
+                    <div class="h3 mb-0 fw-bold" id="kpi-users">0</div>
+                    <i class="fa-solid fa-users kpi-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-6 mb-4">
+            <div class="card card-custom bg-gradient-warning h-100 py-3 position-relative overflow-hidden">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">สินค้าใกล้หมดสต็อก (<10)</div>
+                    <div class="h3 mb-0 fw-bold" id="kpi-lowstock">0</div>
+                    <i class="fa-solid fa-boxes-stacked kpi-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-6 mb-4">
+            <div class="card card-custom bg-gradient-danger h-100 py-3 position-relative overflow-hidden">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-1 opacity-75">ข้อร้องเรียน (ยังไม่แก้)</div>
+                    <div class="h3 mb-0 fw-bold" id="kpi-complaints">0</div>
+                    <i class="fa-solid fa-triangle-exclamation kpi-icon"></i>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="card border-l-4 border-green-500">
-            <div class="flex justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm">ยอดขายวันนี้ (Est.)</p>
-                    <h2 class="text-2xl font-bold" id="kpi-revenue">฿0</h2>
-                </div>
-                <div class="text-green-500 text-3xl"><i class="fas fa-coins"></i></div>
+    <div class="row">
+        <div class="col-lg-7 mb-4">
+            <div class="card card-custom h-100 p-4">
+                <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-chart-line me-2"></i>แนวโน้มยอดขายและออเดอร์รายวัน</h6>
+                <div style="height: 300px;"><canvas id="trendChart"></canvas></div>
             </div>
         </div>
-        
-        <div class="card border-l-4 border-blue-500">
-            <div class="flex justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm">Conversion Rate</p>
-                    <h2 class="text-2xl font-bold" id="kpi-conversion">0%</h2>
-                </div>
-                <div class="text-blue-500 text-3xl"><i class="fas fa-exchange-alt"></i></div>
-            </div>
-        </div>
-
-        <div class="card border-l-4 border-yellow-500">
-            <div class="flex justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm">แชทตกหล่น / รอตอบ</p>
-                    <h2 class="text-2xl font-bold text-yellow-600" id="kpi-unanswered">0</h2>
-                </div>
-                <div class="text-yellow-500 text-3xl"><i class="fas fa-comment-dots"></i></div>
-            </div>
-        </div>
-
-        <div class="card border-l-4 border-red-500">
-            <div class="flex justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm">ลูกค้าโกรธ (ด่วน!)</p>
-                    <h2 class="text-2xl font-bold text-red-600" id="kpi-urgent">0</h2>
-                </div>
-                <div class="text-red-500 text-3xl"><i class="fas fa-fire"></i></div>
+        <div class="col-lg-5 mb-4">
+            <div class="card card-custom h-100 p-4">
+                <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-face-smile me-2"></i>ความพึงพอใจลูกค้า (Sentiment)</h6>
+                <div style="height: 300px; display: flex; justify-content: center;"><canvas id="sentimentChart"></canvas></div>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="card md:col-span-2">
-            <h3 class="text-lg font-bold mb-4 text-gray-700">สินค้า: ยอดถาม vs ยอดซื้อ (Inquiry vs Purchase)</h3>
-            <canvas id="productChart" height="120"></canvas>
-            <p class="text-xs text-gray-400 mt-2">*ช่วยวิเคราะห์ว่าสินค้าตัวไหนคนสนใจแต่ยังปิดการขายไม่ได้</p>
-        </div>
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card card-custom p-4">
+                
+                <ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-orders" type="button"><i class="fa-solid fa-box-open me-2"></i>ออเดอร์ (Order)</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-payments" type="button"><i class="fa-solid fa-money-bill-wave me-2"></i>การชำระเงิน (Payments)</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-products" type="button"><i class="fa-solid fa-tags me-2"></i>คลังสินค้า (Products)</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-inquiries" type="button"><i class="fa-solid fa-clipboard-question me-2"></i>คำถาม/ร้องเรียน (Inquiries & Logs)</button>
+                    </li>
+                </ul>
 
-        <div class="card">
-            <h3 class="text-lg font-bold mb-4 text-gray-700">อารมณ์ลูกค้า (Sentiment)</h3>
-            <div class="relative h-48">
-                <canvas id="sentimentChart"></canvas>
-            </div>
-            <div class="mt-4 border-t pt-4">
-                <h4 class="text-sm font-bold text-gray-600 mb-2">สาเหตุที่ทักมา (Intent)</h4>
-                <div id="intent-list" class="space-y-2 text-sm">
+                <div class="tab-content" id="myTabContent">
+                    <div class="tab-pane fade show active" id="tab-orders">
+                        <div class="table-responsive table-container">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>วันที่</th>
+                                        <th>ชื่อลูกค้า</th>
+                                        <th>สินค้าที่สั่ง</th>
+                                        <th>จำนวน</th>
+                                        <th>ยอดรวม</th>
+                                        <th>สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-orders-body"></tbody>
+                            </table>
+                        </div>
                     </div>
+                    
+                    <div class="tab-pane fade" id="tab-payments">
+                        <div class="table-responsive table-container">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>วันเวลาโอน</th>
+                                        <th>ชื่อผู้โอน</th>
+                                        <th>ธนาคาร</th>
+                                        <th>ยอดเงิน</th>
+                                        <th>เลขอ้างอิง</th>
+                                        <th>แจ้งเตือนสลิปซ้ำ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-payments-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-products">
+                        <div class="table-responsive table-container">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>รหัส</th>
+                                        <th>ชื่อสินค้า</th>
+                                        <th>รายละเอียด</th>
+                                        <th>ราคา</th>
+                                        <th>คงเหลือ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-products-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tab-inquiries">
+                        <div class="table-responsive table-container">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>ประเภท</th>
+                                        <th>วันที่</th>
+                                        <th>เนื้อหา/ข้อความ</th>
+                                        <th>สรุป (AI)</th>
+                                        <th>สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-mixed-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
+</div>
 
-    <div class="card">
-        <h3 class="text-lg font-bold mb-4 text-gray-700">รายการล่าสุด (Real-time Feed)</h3>
-        <div class="overflow-x-auto">
-            <table class="min-w-full leading-normal">
-                <thead>
-                    <tr>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">เวลา</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ลูกค้า</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ข้อความ/สินค้า</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Intent</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Auto-Tag</th>
-                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Sentiment</th>
-                    </tr>
-                </thead>
-                <tbody id="transaction-table">
-                    </tbody>
-            </table>
-        </div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
-    <script>
-        // ==========================================
-        // CONFIGURATION
-        // ==========================================
-        
-        // ใส่ ID ของ Google Sheet ที่นี่ (ถ้าเป็น 'xxx' ระบบจะใช้ Mock Data)
-        const GOOGLE_SHEET_ID = 'xxx'; 
-        
-        // ชื่อ Sheet Tab ที่ต้องการดึงข้อมูล (ถ้าใช้ Google Sheet)
-        const SHEET_TAB_NAME = 'Sheet1'; 
+<script>
+    const SHEET_ID = '1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE';
+    
+    function getSheetUrl(sheetName) {
+        return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
+    }
 
-        // ==========================================
-        // MOCK DATA (จำลองข้อมูลตามโครงสร้าง PDF)
-        // ==========================================
-        function getMockData() {
-            return [
-                // Structure mapped from PDF: message_id, timestamp, intent, sentiment, product_name, total_price, auto_tags
-                { time: '10:05', customer: 'User01', msg: 'สนใจเสื้อแดง ไซส์ L', intent: 'Purchase', product: 'เสื้อแดง', price: 0, tag: '#Lead_เสื้อแดง', sentiment: 'Neutral' },
-                { time: '10:10', customer: 'User01', msg: 'โอนเงินแล้วครับ', intent: 'Payment', product: 'เสื้อแดง', price: 450, tag: '#Paid_รอส่ง', sentiment: 'Positive' },
-                { time: '11:20', customer: 'User02', msg: 'ส่งของยังคะ รอนานแล้ว', intent: 'Complain', product: '-', price: 0, tag: '#ติดตามของ', sentiment: 'Negative' },
-                { time: '11:25', customer: 'User03', msg: 'ขอเลขบัญชีหน่อย', intent: 'Purchase', product: 'เสื้อเขียว', price: 0, tag: '#รอโอน', sentiment: 'Neutral' },
-                { time: '12:00', customer: 'User04', msg: 'เสื้อสีฟ้ามีของไหม', intent: 'Inquiry', product: 'เสื้อฟ้า', price: 0, tag: '#Lead_เสื้อฟ้า', sentiment: 'Neutral' },
-                { time: '12:15', customer: 'User05', msg: 'ได้รับของแล้ว ชอบมากค่ะ', intent: 'Feedback', product: '-', price: 0, tag: '#Review', sentiment: 'Positive' },
-                { time: '12:30', customer: 'User06', msg: 'สินค้าเสียหาย เคลมได้ไหม', intent: 'Complain', product: 'กางเกงยีนส์', price: 0, tag: '#Case_เคลม', sentiment: 'Negative' },
-                { time: '13:00', customer: 'User07', msg: 'CF เสื้อแดง 2 ตัว', intent: 'Purchase', product: 'เสื้อแดง', price: 900, tag: '#Wait_Summary', sentiment: 'Positive' },
-                { time: '13:10', customer: 'User08', msg: 'ทักไปไม่มีคนตอบเลย', intent: 'Complain', product: '-', price: 0, tag: '#Urgent', sentiment: 'Negative' },
-                { time: '13:45', customer: 'User09', msg: 'โอนแล้วจ้า', intent: 'Payment', product: 'เสื้อฟ้า', price: 350, tag: '#Paid_รอส่ง', sentiment: 'Positive' }
-            ];
-        }
-
-        // ==========================================
-        // MAIN LOGIC
-        // ==========================================
-        
-        async function initDashboard() {
-            document.getElementById('current-time').innerText = new Date().toLocaleString('th-TH');
+    async function fetchData() {
+        const sheetNames = ['Order', 'Payments', 'Inquiries', 'Complaints', 'Products', 'Users', 'Log_Others'];
+        try {
+            // ดึงข้อมูลทั้ง 7 ชีตพร้อมกัน (Parallel Fetch)
+            const responses = await Promise.all(sheetNames.map(name => fetch(getSheetUrl(name)).then(res => res.text())));
             
-            let data = [];
-            const statusBadge = document.getElementById('data-status');
+            const data = {};
+            sheetNames.forEach((name, index) => {
+                data[name] = Papa.parse(responses[index], { header: true, skipEmptyLines: true }).data;
+            });
 
-            if (GOOGLE_SHEET_ID === 'xxx') {
-                // กรณีใช้ Mock Data
-                console.log("Using Mock Data");
-                statusBadge.innerText = "Mode: Mock Data";
-                statusBadge.classList.add("bg-orange-200", "text-orange-800");
-                data = getMockData();
-            } else {
-                // กรณีใช้ Google Sheets
-                // *** วิธีการใช้งานจริง: ต้อง Publish Google Sheet to Web เป็น CSV ***
-                console.log("Fetching Google Sheets Data...");
-                statusBadge.innerText = "Mode: Live Data";
-                statusBadge.classList.add("bg-green-200", "text-green-800");
-                
-                try {
-                    // Logic การดึงข้อมูลจาก Google Sheets (CSV Format)
-                    const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_TAB_NAME}`;
-                    const response = await fetch(url);
-                    const text = await response.text();
-                    data = parseCSV(text); // ฟังก์ชันแปลง CSV เป็น JSON
-                } catch (error) {
-                    console.error("Error fetching sheet:", error);
-                    alert("ไม่สามารถดึงข้อมูลจาก Google Sheet ได้ กรุณาตรวจสอบ ID และ Permission (ต้อง Share > Anyone with link)");
-                    data = getMockData(); // Fallback to mock
-                }
+            processDashboard(data);
+            document.getElementById('last-update').innerText = `อัปเดตข้อมูลล่าสุด: ${new Date().toLocaleTimeString('th-TH')}`;
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            alert("ไม่สามารถโหลดข้อมูลได้ กรุณาตรวจสอบการตั้งค่า Publish to Web ของ Google Sheets");
+        }
+    }
+
+    function processDashboard(data) {
+        const { Order, Payments, Inquiries, Complaints, Products, Users, Log_Others } = data;
+
+        // --- 1. จัดการ KPIs ---
+        document.getElementById('kpi-orders').innerText = Order.length.toLocaleString();
+        document.getElementById('kpi-users').innerText = Users.length.toLocaleString();
+        
+        // คำนวณยอดขายรวม (ดึงจาก Order total_cost)
+        let revenue = 0;
+        Order.forEach(o => { if (o.total_cost) revenue += parseFloat(o.total_cost.replace(/,/g, '')) || 0; });
+        document.getElementById('kpi-revenue').innerText = revenue.toLocaleString();
+
+        // สินค้าใกล้หมด (<10)
+        const lowStock = Products.filter(p => parseInt(p.stock) < 10).length;
+        document.getElementById('kpi-lowstock').innerText = lowStock;
+
+        // ข้อร้องเรียน (ไม่ใช่ Resolved)
+        const activeComplaints = Complaints.filter(c => c.status !== 'Resolved').length;
+        document.getElementById('kpi-complaints').innerText = activeComplaints;
+
+        // --- 2. สร้าง Charts ---
+        // Sentiment Chart (รวมข้อมูลจาก Order และ Log_Others)
+        let sentiments = { 'Positive': 0, 'Neutral': 0, 'Negative': 0 };
+        [...Order, ...Log_Others].forEach(item => {
+            if (item.sentiment === 'Positive') sentiments['Positive']++;
+            else if (item.sentiment === 'Negative') sentiments['Negative']++;
+            else if (item.sentiment) sentiments['Neutral']++;
+        });
+
+        new Chart(document.getElementById('sentimentChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Positive', 'Neutral', 'Negative'],
+                datasets: [{
+                    data: [sentiments['Positive'], sentiments['Neutral'], sentiments['Negative']],
+                    backgroundColor: ['#1cc88a', '#f6c23e', '#e74a3b'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // Trend Chart (ออเดอร์รายวัน)
+        const dateCounts = {};
+        Order.forEach(o => {
+            if(o.timestamp) {
+                const date = o.timestamp.split('T')[0];
+                dateCounts[date] = (dateCounts[date] || 0) + 1;
             }
+        });
+        const dates = Object.keys(dateCounts).sort();
+        const counts = dates.map(d => dateCounts[d]);
 
-            renderDashboard(data);
-        }
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'จำนวนออเดอร์',
+                    data: counts,
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    pointBackgroundColor: '#4e73df',
+                    pointBorderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
 
-        function parseCSV(csvText) {
-            // Simple CSV Parser logic (สมมติว่า Column ตรงกับ Mockup)
-            // ในการใช้งานจริง ต้องปรับ map ให้ตรงกับ Header ของ Sheet
-            const rows = csvText.split('\n').slice(1); // ตัด Header ออก
-            return rows.map(row => {
-                const cols = row.split(','); // *หมายเหตุ: ถ้าข้อมูลมี comma ขั้นอาจต้องใช้ library ดีกว่า
-                // สมมติลำดับคอลัมน์: time, customer, msg, intent, product, price, tag, sentiment
-                return {
-                    time: cols[0]?.replace(/"/g, '') || '-',
-                    customer: cols[1]?.replace(/"/g, '') || 'Unknown',
-                    msg: cols[2]?.replace(/"/g, '') || '',
-                    intent: cols[3]?.replace(/"/g, '') || 'General',
-                    product: cols[4]?.replace(/"/g, '') || '-',
-                    price: parseFloat(cols[5]?.replace(/"/g, '')) || 0,
-                    tag: cols[6]?.replace(/"/g, '') || '',
-                    sentiment: cols[7]?.replace(/"/g, '') || 'Neutral'
-                };
-            }).filter(item => item.time !== '-');
-        }
+        // --- 3. อัปเดตตาราง (Tables) ---
+        
+        // ตาราง Orders
+        const orderHtml = Order.slice().reverse().map(o => `
+            <tr>
+                <td>${o.timestamp ? o.timestamp.split('T')[0] : '-'}</td>
+                <td class="fw-medium">${o.recipient_name || '-'}</td>
+                <td>${o.product_name || '-'}</td>
+                <td>${o.quantity || '-'}</td>
+                <td>฿${o.total_cost || '0'}</td>
+                <td><span class="badge bg-${o.status === 'Paid' ? 'success' : o.status === 'Pending' ? 'warning text-dark' : 'secondary'}">${o.status || '-'}</span></td>
+            </tr>
+        `).join('');
+        document.getElementById('table-orders-body').innerHTML = orderHtml;
 
-        function renderDashboard(data) {
-            // 1. Calculate KPIs
-            const totalRevenue = data.reduce((sum, item) => sum + item.price, 0);
-            const totalChats = data.length;
-            const purchaseIntents = data.filter(d => d.intent === 'Purchase' || d.intent === 'Payment').length;
-            const conversionRate = totalChats > 0 ? ((purchaseIntents / totalChats) * 100).toFixed(1) : 0;
-            const urgentCount = data.filter(d => d.sentiment === 'Negative').length;
-            const unansweredCount = data.filter(d => d.tag.includes('Wait') || d.tag.includes('Urgent')).length; // สมมติ Logic
+        // ตาราง Payments
+        const payHtml = Payments.slice().reverse().map(p => {
+            const isDup = p.is_duplicate === 'TRUE' || p.is_duplicate === 'true';
+            return `
+            <tr class="${isDup ? 'table-danger' : ''}">
+                <td>${p.transaction_date ? p.transaction_date.replace('T', ' ').split('+')[0] : '-'}</td>
+                <td>${p.sender_name || '-'}</td>
+                <td>${p.receiver_bank_name || '-'}</td>
+                <td class="text-success fw-bold">฿${p.payment_amount || '0'}</td>
+                <td class="small text-muted">${p.reference || '-'}</td>
+                <td>${isDup ? '<span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation"></i> สลิปซ้ำ</span>' : '<span class="badge bg-success">ปกติ</span>'}</td>
+            </tr>`;
+        }).join('');
+        document.getElementById('table-payments-body').innerHTML = payHtml;
 
-            // Update KPI DOM
-            document.getElementById('kpi-revenue').innerText = `฿${totalRevenue.toLocaleString()}`;
-            document.getElementById('kpi-conversion').innerText = `${conversionRate}%`;
-            document.getElementById('kpi-urgent').innerText = urgentCount;
-            document.getElementById('kpi-unanswered').innerText = unansweredCount;
+        // ตาราง Products
+        const prodHtml = Products.map(p => {
+            const stock = parseInt(p.stock) || 0;
+            return `
+            <tr>
+                <td class="text-muted fw-bold">${p.product_id || '-'}</td>
+                <td class="fw-medium">${p.product_name || '-'}</td>
+                <td class="small text-muted">${p.description || '-'}</td>
+                <td>฿${p.price || '-'}</td>
+                <td class="${stock < 10 ? 'text-danger fw-bold' : 'text-success'}">${stock}</td>
+            </tr>`;
+        }).join('');
+        document.getElementById('table-products-body').innerHTML = prodHtml;
 
-            // 2. Prepare Chart Data (Product Inquiry vs Sales)
-            const products = {};
-            data.forEach(d => {
-                if(d.product && d.product !== '-') {
-                    if(!products[d.product]) products[d.product] = { inquiry: 0, sales: 0 };
-                    if(d.intent === 'Inquiry' || d.intent === 'Purchase') products[d.product].inquiry++;
-                    if(d.intent === 'Payment') products[d.product].sales++;
-                }
-            });
+        // ตาราง Mixed (Inquiries + Complaints + Logs) เรียงตามเวลา
+        let mixedData = [
+            ...Inquiries.map(i => ({ type: 'Inquiry', icon: 'fa-circle-question text-info', ...i })),
+            ...Complaints.map(c => ({ type: 'Complaint', icon: 'fa-triangle-exclamation text-danger', ...c })),
+            ...Log_Others.map(l => ({ type: 'Log', icon: 'fa-bug text-secondary', ...l }))
+        ];
+        
+        // เรียงลำดับจากใหม่ไปเก่า
+        mixedData.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
 
-            const productLabels = Object.keys(products);
-            const inquiryData = productLabels.map(p => products[p].inquiry);
-            const salesData = productLabels.map(p => products[p].sales);
+        const mixedHtml = mixedData.map(m => `
+            <tr>
+                <td><i class="fa-solid ${m.icon} me-2"></i>${m.type}</td>
+                <td class="small text-muted">${m.timestamp ? m.timestamp.split('T')[0] : '-'}</td>
+                <td>${m.content || '-'}</td>
+                <td class="small">${m.summary || '-'}</td>
+                <td><span class="badge bg-light text-dark border">${m.status || 'N/A'}</span></td>
+            </tr>
+        `).join('');
+        document.getElementById('table-mixed-body').innerHTML = mixedHtml;
+    }
 
-            new Chart(document.getElementById('productChart'), {
-                type: 'bar',
-                data: {
-                    labels: productLabels,
-                    datasets: [
-                        { label: 'ยอดถาม (Inquiry)', data: inquiryData, backgroundColor: '#93C5FD' },
-                        { label: 'ยอดซื้อ (Paid)', data: salesData, backgroundColor: '#3B82F6' }
-                    ]
-                },
-                options: { scales: { y: { beginAtZero: true } } }
-            });
-
-            // 3. Prepare Chart Data (Sentiment)
-            const sentimentCounts = { Positive: 0, Neutral: 0, Negative: 0 };
-            data.forEach(d => {
-                if(sentimentCounts[d.sentiment] !== undefined) sentimentCounts[d.sentiment]++;
-            });
-
-            new Chart(document.getElementById('sentimentChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Positive', 'Neutral', 'Negative'],
-                    datasets: [{
-                        data: [sentimentCounts.Positive, sentimentCounts.Neutral, sentimentCounts.Negative],
-                        backgroundColor: ['#34D399', '#D1D5DB', '#EF4444']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 4. Intent List
-            const intentCounts = {};
-            data.forEach(d => { intentCounts[d.intent] = (intentCounts[d.intent] || 0) + 1; });
-            const intentListHTML = Object.entries(intentCounts)
-                .sort((a,b) => b[1] - a[1]) // Sort by count
-                .map(([key, val]) => `
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-600">${key}</span>
-                        <span class="font-bold bg-gray-100 px-2 py-1 rounded text-xs">${val}</span>
-                    </div>
-                `).join('');
-            document.getElementById('intent-list').innerHTML = intentListHTML;
-
-            // 5. Render Table
-            const tableBody = document.getElementById('transaction-table');
-            tableBody.innerHTML = data.map(row => {
-                let sentimentColor = row.sentiment === 'Negative' ? 'text-red-600 font-bold' : (row.sentiment === 'Positive' ? 'text-green-600' : 'text-gray-600');
-                let tagColor = row.tag.includes('Paid') ? 'bg-green-100 text-green-800' : (row.tag.includes('Urgent') || row.tag.includes('เคลม') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800');
-                
-                return `
-                    <tr>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-gray-500">${row.time}</td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm font-semibold">${row.customer}</td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-gray-500">
-                            <div>${row.msg}</div>
-                            <div class="text-xs text-gray-400 mt-1">${row.product !== '-' ? '📦 ' + row.product : ''}</div>
-                        </td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-gray-500">${row.intent}</td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                            <span class="relative inline-block px-3 py-1 font-semibold leading-tight ${tagColor} rounded-full text-xs">
-                                ${row.tag}
-                            </span>
-                        </td>
-                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm ${sentimentColor}">${row.sentiment}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        // Run
-        initDashboard();
-
-    </script>
+    // เริ่มทำงานเมื่อโหลดหน้า
+    window.onload = fetchData;
+</script>
 </body>
 </html>
