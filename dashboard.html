@@ -402,5 +402,65 @@
     // เริ่มทำงานเมื่อโหลดหน้า
     window.onload = fetchData;
 </script>
+
+<!-- ปุ่มเลื่อนออโต้ -->
+<button id="autoScrollBtn">⬇️</button>
+
+<style>
+  #autoScrollBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3); /* ความใส */
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    backdrop-filter: blur(5px); /* เบลอหลังปุ่มให้ดูแพง */
+    z-index: 9999;
+    transition: 0.3s;
+  }
+
+  #autoScrollBtn:hover {
+    background: rgba(255, 255, 255, 0.6);
+  }
+</style>
+
+<script>
+  let scrolling = false;
+  let scrollInterval;
+  let direction = 1; // 1 คือลง, -1 คือขึ้น
+  const speed = 2; // ความเร็ว (ยิ่งเยอะยิ่งเร็ว)
+
+  const btn = document.getElementById('autoScrollBtn');
+
+  btn.addEventListener('click', () => {
+    if (!scrolling) {
+      scrolling = true;
+      btn.innerText = "🛑"; // เปลี่ยนไอคอนตอนทำงาน
+      
+      scrollInterval = setInterval(() => {
+        window.scrollBy(0, direction * speed);
+
+        // เช็คว่าถึงล่างสุดหรือยัง
+        if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight) {
+          direction = -1; // เปลี่ยนเป็นเลื่อนขึ้น
+        }
+        
+        // เช็คว่าถึงบนสุดหรือยัง
+        if (window.pageYOffset <= 0) {
+          direction = 1; // เปลี่ยนเป็นเลื่อนลง
+        }
+      }, 10); // ทำงานทุกๆ 10ms
+    } else {
+      // หยุดการทำงาน
+      scrolling = false;
+      clearInterval(scrollInterval);
+      btn.innerText = "⬇️";
+    }
+  });
+</script>
+<!-- จบปุ่มเลื่อนออโต้ -->
 </body>
 </html>
