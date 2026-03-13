@@ -141,7 +141,7 @@ ProjectAI-Business/
 ### 1. Clone และ Setup
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/GiftNuttamon/ProjectAI-Business/
 cd ProjectAI-Business/docker
 ```
 
