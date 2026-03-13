@@ -1,0 +1,2082 @@
+{
+  "name": "ChatBuddy v3 — True Agentic",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chatbuddy-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "7dd01a21-4c56-451b-b538-530401a2b4e7",
+      "name": "LINE Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1920,
+        352
+      ],
+      "webhookId": "b6da7904-80e5-439c-9179-4d95620cc2cd"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body   = $input.first().json.body;\nconst events = body.events || [];\nif (!events.length) return [{ json: { skip: true } }];\n\nconst event      = events[0];\nconst userId     = event.source?.userId || 'unknown';\nconst msgType    = event.message?.type  || 'unknown';\nconst replyToken = event.replyToken     || '';\n\nlet content = '';\nlet imageId = null;\n\nif (msgType === 'text') {\n  content = event.message.text;\n} else if (msgType === 'image') {\n  content = '[IMAGE]';\n  imageId = event.message.id;\n} else if (msgType === 'location') {\n  content = '[LOCATION] lat:' + event.message.latitude + ' lng:' + event.message.longitude + ' addr:' + (event.message.address || '');\n}\n\n/* -----------------------------\n   Intent Detection\n----------------------------- */\nlet intent = \"Other\";\n\nif (msgType === \"text\") {\n  const text = content.toLowerCase();\n\n  if (\n    text.includes(\"ราคา\") ||\n    text.includes(\"มีไหม\") ||\n    text.includes(\"ขาย\") ||\n    text.includes(\"โปร\")\n  ) {\n    intent = \"Inquiry\";\n  }\n\n  else if (\n    text.includes(\"สั่ง\") ||\n    text.includes(\"เอา\") ||\n    text.includes(\"ซื้อ\")\n  ) {\n    intent = \"Purchase\";\n  }\n\n  else if (\n    text.includes(\"สถานะ\") ||\n    text.includes(\"พัสดุ\") ||\n    text.includes(\"เลขติดตาม\")\n  ) {\n    intent = \"Status_Check\";\n  }\n\n  else if (\n    text.includes(\"พัง\") ||\n    text.includes(\"เสีย\") ||\n    text.includes(\"เคลม\") ||\n    text.includes(\"โกง\") ||\n    text.includes(\"ห่วย\") ||\n    text.includes(\"คืนเงิน\") ||\n    text.includes(\"ยกเลิก\")\n  ) {\n    intent = \"Complaint\";\n  }\n}\n\nreturn [{\n  json: {\n    userId,\n    messageId: event.message?.id || '',\n    messageType: msgType,\n    content,\n    imageId,\n    replyToken,\n    intent,\n    timestamp: new Date(event.timestamp).toISOString()\n  }\n}];"
+      },
+      "id": "15f3c841-77f9-4ee1-bb11-5b7875d9c992",
+      "name": "Pre-process Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1648,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Pre-process Payload').item.json.messageType }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "eededc98-c3de-4fda-ac7a-fdcd87d8523b",
+      "name": "Is Image?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1312,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Pre-process Payload').first().json.userId }}"
+      },
+      "id": "d6f19fdc-7c50-4e05-b21b-581c7d1b8a4d",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -816,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "ค้นหาข้อมูลสินค้า ราคา สต็อก และโปรโมชัน ส่ง search_query เป็นคำหลักสั้นๆ เช่น 'แดง' 'ฮาวาย' ถ้าต้องการทั้งหมดให้ส่งค่าว่าง",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2115791625,
+          "mode": "list",
+          "cachedResultName": "Products"
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "id": "a0b06cfe-1566-45e8-9291-d3652741e8e9",
+      "name": "Get_Product",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -624,
+        736
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "ค้นหาสถานะออเดอร์ของลูกค้า ใช้ชื่อผู้รับหรือเบอร์โทรเป็น search_query",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "recipient_name",
+              "lookupValue": "={{ $fromAI('search_query', 'ชื่อผู้รับหรือเบอร์โทร') }}"
+            },
+            {
+              "lookupColumn": "phone_number",
+              "lookupValue": "={{ $fromAI('search_query', 'ชื่อผู้รับหรือเบอร์โทร') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "id": "8016363a-3417-48e0-b3d5-0caf20c8809c",
+      "name": "Get_Order",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -416,
+        736
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "บันทึกออเดอร์ลง Sheet เรียกเฉพาะเมื่อข้อมูลครบทั้ง 5 อย่าง: product_name, quantity, recipient_name, phone_number, shipping_address",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Pre-process Payload').first().json.timestamp }}",
+            "userId": "={{ $('Pre-process Payload').first().json.userId }}",
+            "messageId": "={{ $('Pre-process Payload').first().json.messageId }}",
+            "orderid": "={{ $fromAI('orderid', 'รหัสออเดอร์ เช่น ORD-20250305-1234') }}",
+            "intent": "Purchase",
+            "product_name": "={{ $fromAI('product_name', 'ชื่อสินค้า') }}",
+            "quantity": "={{ $fromAI('quantity', 'จำนวน') }}",
+            "total_cost": "={{ $fromAI('total_cost', 'ราคารวมหลังหักโปร') }}",
+            "recipient_name": "={{ $fromAI('recipient_name', 'ชื่อผู้รับ') }}",
+            "phone_number": "={{ $fromAI('phone_number', 'เบอร์โทร') }}",
+            "shipping_address": "={{ $fromAI('shipping_address', 'ที่อยู่จัดส่ง') }}",
+            "status": "Pending",
+            "sentiment": "={{ $fromAI('sentiment', 'Positive / Neutral / Negative') }}",
+            "summary": "={{ $fromAI('summary', 'สรุปออเดอร์สั้นๆ 1 ประโยค') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "orderid",
+              "displayName": "orderid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_cost",
+              "displayName": "total_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "quantity",
+              "displayName": "quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recipient_name",
+              "displayName": "recipient_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "shipping_address",
+              "displayName": "shipping_address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "aef7a0c2-355e-466c-86c6-d65a6cfaf4a0",
+      "name": "Save_Order",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -224,
+        736
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst prev = $('Pre-process Payload').first().json;\n\nlet sentiment = 'Neutral'; // ค่าเริ่มต้น\nlet reply = agentOutput;\n\n// ดึงค่า Sentiment ออกมาจาก Tag [Sentiment: XXX]\nconst sentimentMatch = reply.match(/\\[Sentiment:\\s*(Positive|Neutral|Negative)\\]/i);\nif (sentimentMatch) {\n  sentiment = sentimentMatch[1]; // ได้คำว่า Positive, Neutral หรือ Negative\n  // ตัด Tag ออกจากข้อความที่จะส่งให้ลูกค้า\n  reply = reply.replace(sentimentMatch[0], '').trim();\n}\n\n// ทำความสะอาดข้อความเพิ่มเติม (เผื่อ AI พิมพ์เกิน)\nreply = reply\n  .replace(/<บันทึกการสนทนา>[\\s\\S]*/g, '')\n  .replace(/```[\\s\\S]*?```/g, '')\n  .replace(/\\*\\*(.*?)\\*\\*/g, '$1')\n  .replace(/\\{[\\s\\S]*?\\}/g, '')\n  .trim();\n\nif (!reply) {\n  reply = 'ขอโทษค่ะ ระบบขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้งนะคะ 🙏';\n}\n\nreturn [{\n  json: {\n    replyToken: prev.replyToken,\n    userId: prev.userId,\n    reply_message: reply,\n    sentiment: sentiment // ส่งค่า sentiment ต่อไปให้โหนดถัดไป\n  }\n}];"
+      },
+      "id": "a878c6a4-e2ff-4bbc-9e20-f9b867e24630",
+      "name": "Extract Agent Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "id": "632f7d97-2907-4c4d-9536-2a2d0aff900b",
+      "name": "LINE Reply",
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        528
+      ],
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $json.imageId }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "3f5c37a0-7b97-45cd-aac9-de5e44a7bd9f",
+      "name": "Download Image from LINE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -928,
+        208
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "z9RJgqA2d9h4420s",
+          "name": "Header Auth account"
+        },
+        "httpBearerAuth": {
+          "id": "cyWvk2jr9ZSM3JOf",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $('Download Image from LINE').item.json.imageId }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1X9c2yrkwMhnMlfTIyNgArFlmJWIn3xVe",
+          "mode": "list",
+          "cachedResultName": "slip"
+        },
+        "options": {}
+      },
+      "id": "d61ba1df-3482-4840-81be-83fb02c9d054",
+      "name": "Save Slip to Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -640,
+        336
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "qwaZKVJ5RCcrau5B",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c-dup",
+              "leftValue": "={{ $json.message }}",
+              "rightValue": "duplicate_slip",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "95e12b98-ebad-40d7-8f57-8b854a0c2a3b",
+      "name": "Is Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -400,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('LINE Webhook').item.json.body.events[0].replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "สลิปนี้มีการใช้ซ้ำแล้ว รบกวนลูกค้าส่งใหม่ด้วยค่ะ"
+            }
+          ]
+        }
+      },
+      "id": "dc3a7079-3a8f-4132-a6b4-3f1300e03400",
+      "name": "Reply Duplicate",
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        -64
+      ],
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $('Is Image?').item.json.replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "text": "สลิปไม่ตรงกับชื่อร้าน กรุณาส่งสลิปใหม่ค่ะ"
+            }
+          ]
+        }
+      },
+      "id": "ff8c05dc-e3ff-4a08-b12b-fd31f568f408",
+      "name": "Reply Slip Invalid",
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        304
+      ],
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "userId",
+              "lookupValue": "={{ $('Is Image?').item.json.userId }}"
+            },
+            {
+              "lookupColumn": "status",
+              "lookupValue": "Pending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6026ce17-35b4-4f82-a4a9-bb01aee4a9b1",
+      "name": "Get Pending Order",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -192,
+        128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1036159127,
+          "mode": "list",
+          "cachedResultName": "Payments"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Is Image?').item.json.timestamp }}",
+            "userId": "={{ $('Is Image?').item.json.userId }}",
+            "messageId": "={{ $('Is Image?').item.json.messageId }}",
+            "intent": "Purchased",
+            "payment_amount": "={{ $('Is Duplicate?').item.json.data?.amount?.amount || 0 }}",
+            "sender_name": "={{ $('Is Duplicate?').item.json.data.sender.account.name.th }}",
+            "receiver_name": "={{ $('Is Duplicate?').item.json.data.receiver.account.name.th }}",
+            "receiver_bank_id": "={{ $('Is Duplicate?').item.json.data.receiver.bank.id }}",
+            "receiver_bank_name": "={{ $('Is Duplicate?').item.json.data.receiver.bank.name }}",
+            "transaction_date": "={{ $('Is Duplicate?').item.json.data.date }}",
+            "reference": "={{ $('Is Duplicate?').item.json.data.transRef }}",
+            "is_duplicate": "false",
+            "status": "Checked",
+            "imageid": "={{ $('Is Image?').item.json.imageId }}",
+            "orderid": "={{ $json.orderid }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "payment_amount",
+              "displayName": "payment_amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sender_name",
+              "displayName": "sender_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "receiver_name",
+              "displayName": "receiver_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "receiver_bank_id",
+              "displayName": "receiver_bank_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "receiver_bank_name",
+              "displayName": "receiver_bank_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "transaction_date",
+              "displayName": "transaction_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reference",
+              "displayName": "reference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "is_duplicate",
+              "displayName": "is_duplicate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "imageid",
+              "displayName": "imageid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "orderid",
+              "displayName": "orderid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "80cc3e4c-4790-46c6-8379-f9d7c328928c",
+      "name": "Save Payment",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        192,
+        128
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{ $('Pre-process Payload').item.json.userId }}",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "={{ $('LINE Webhook').item.json.body.events[0].message.quoteToken }}",
+              "text": "รับยอดค่ะ 🙏 ขอบคุณที่อุดหนุนนะคะ แม่ค้าจะรีบจัดส่งให้เลยค่ะ"
+            }
+          ]
+        }
+      },
+      "id": "d98a036b-3ecf-4a09-b6be-aa708f4c805c",
+      "name": "Payment Complete",
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        560,
+        128
+      ],
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * *"
+            }
+          ]
+        }
+      },
+      "id": "75543194-a8e9-41fd-9ca5-8b0969740111",
+      "name": "Daily Cron 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1088,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order"
+        },
+        "options": {}
+      },
+      "id": "892881da-ee14-4826-a217-489f019a7689",
+      "name": "Fetch Orders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -816,
+        992
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1036159127,
+          "mode": "list",
+          "cachedResultName": "Payments"
+        },
+        "options": {}
+      },
+      "id": "4f3e5d60-75cd-4016-825a-61c4fd24b0ff",
+      "name": "Fetch Payments",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -816,
+        1152
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "34cec7c5-062a-448f-96e7-423da648102d",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -576,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });\nconst orders   = $('Fetch Orders').all().map(r => r.json);\nconst payments = $('Fetch Payments').all().map(r => r.json);\n\n// ── helper: parse payment_amount ไม่ว่าจะเป็น format ไหน ──\nfunction parseAmount(val) {\n  if (!val) return 0;\n  if (typeof val === 'number') return val;\n  // กรณีเป็น JSON string เช่น {\"amount\":200,\"local\":...}\n  if (typeof val === 'string' && val.startsWith('{')) {\n    try {\n      const obj = JSON.parse(val);\n      return parseFloat(obj.amount || obj.payment_amount || 0);\n    } catch(e) { return 0; }\n  }\n  return parseFloat(val.replace(/,/g, '')) || 0;\n}\n\n// ── แปลง timestamp เป็น Bangkok date ──\nfunction toBkkDate(ts) {\n  if (!ts) return '';\n  return new Date(ts).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });\n}\n\nconst todayOrders   = orders.filter(r => toBkkDate(r.timestamp) === today);\nconst todayPayments = payments.filter(r => toBkkDate(r.timestamp) === today);\n\nconst totalRevenue = todayPayments\n  .filter(r => r.status === 'Checked')\n  .filter(r => r.is_duplicate !== 'true' && r.is_duplicate !== true)\n  .filter(r => parseAmount(r.payment_amount) > 0)\n  .reduce((sum, r) => sum + parseAmount(r.payment_amount), 0);\n\nconst paidCount      = todayPayments.filter(r => r.is_duplicate !== 'true' && parseAmount(r.payment_amount) > 0).length;\nconst duplicateCount = todayPayments.filter(r => r.is_duplicate === 'true' || r.is_duplicate === true).length;\n\n// ── pending: กรอง duplicate orderid ออก ──\nconst seenOrders = new Set();\nconst pendingList = todayOrders.filter(r => {\n  if (r.status !== 'Pending') return false;\n  if (seenOrders.has(r.orderid)) return false;\n  seenOrders.add(r.orderid);\n  return true;\n});\n\nconst complaintCount = todayOrders.filter(r => r.sentiment === 'Negative').length;\n\nconst productCount = {};\ntodayOrders.forEach(r => {\n  if (r.product_name) productCount[r.product_name] = (productCount[r.product_name] || 0) + 1;\n});\nconst topProducts = Object.entries(productCount)\n  .sort((a,b) => b[1]-a[1]).slice(0,3)\n  .map(([n,c]) => `• ${n} (${c})`).join('\\n') || 'ไม่มีข้อมูล';\n\nconst pendingNames = pendingList\n  .map(r => `• ${r.recipient_name || r.userId}`).join('\\n') || 'ไม่มี';\n\nconst message =\n  `📊 ChatBuddy รายงานประจำวัน\\n📅 ${today}\\n━━━━━━━━━━━━━━━\\n` +\n  `💰 ยอดขายรวม: ${totalRevenue.toLocaleString()} บาท\\n` +\n  `📦 ออเดอร์: ${todayOrders.length} รายการ\\n` +\n  `✅ ชำระแล้ว: ${paidCount} รายการ\\n` +\n  `⚠️ สลิปซ้ำ: ${duplicateCount} รายการ\\n` +\n  `⏳ รอชำระ: ${pendingList.length} รายการ\\n` +\n  `🚨 เคสร้องเรียน: ${complaintCount} เคส\\n` +\n  `━━━━━━━━━━━━━━━\\n🏆 สินค้าขายดี:\\n${topProducts}\\n` +\n  `━━━━━━━━━━━━━━━\\n⏳ ลูกค้ารอชำระ:\\n${pendingNames}`;\n\nreturn [{ json: { message } }];"
+      },
+      "id": "76d9bc6c-77ce-45b4-9713-652abb828800",
+      "name": "Build Daily Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "multicast",
+        "to": "U7b9346a3c96c8ddefba907a17d908808",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $json.message }}"
+            }
+          ]
+        }
+      },
+      "id": "b523a022-877f-4708-aa2f-8fbee3c2ed1b",
+      "name": "Multicast Admin",
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        1056
+      ],
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "verifyByImage",
+        "checkDuplicate": true,
+        "additionalOptions": {
+          "receiverName": "นาย นวัตกรณ์ น"
+        }
+      },
+      "type": "n8n-nodes-thunder.thunder",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        144
+      ],
+      "id": "a15f0aeb-e48e-4f03-99ff-571da4672fc6",
+      "name": "Verify by image a bank slip",
+      "credentials": {
+        "thunderApi": {
+          "id": "Ix6c5JGWtD0S5Nmf",
+          "name": "Thunder account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "showLoadingAnimation",
+        "chatId": "={{ $('Pre-process Payload').item.json.userId }}"
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        368
+      ],
+      "id": "4dc8c45d-f741-4474-9715-d6dde715e71a",
+      "name": "Line Messaging",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const pendingOrders = $('Get Pending Order').all().map(r => r.json);\nconst slipAmount    = $('Is Duplicate?').first().json.data?.amount?.amount || 0;\nconst userMessage   = $('Pre-process Payload').first().json.content || '';\n\n// Priority 1: ลูกค้าพิมพ์เลข order มา\nconst mentionedOrder = pendingOrders.find(o =>\n  userMessage.includes(o.orderid)\n);\n\n// Priority 2: ยอดสลิป match total_cost\nconst amountMatch = pendingOrders.find(o =>\n  parseFloat(o.total_cost) === parseFloat(slipAmount)\n);\n\n// Priority 3: order ล่าสุด (fallback)\nconst latest = [...pendingOrders].sort((a, b) =>\n  new Date(b.timestamp) - new Date(a.timestamp)\n)[0];\n\nconst matched = mentionedOrder || amountMatch || latest;\n\nreturn [{ json: { \n  orderid: matched?.orderid || '',\n  ...matched \n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        128
+      ],
+      "id": "a4c6eb4f-e3d2-41fd-beb9-b32bcfb03fba",
+      "name": "Matchorder"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Order",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "Checked",
+            "orderid": "={{ $json.orderid }}"
+          },
+          "matchingColumns": [
+            "orderid"
+          ],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "orderid",
+              "displayName": "orderid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_cost",
+              "displayName": "total_cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "quantity",
+              "displayName": "quantity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recipient_name",
+              "displayName": "recipient_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "shipping_address",
+              "displayName": "shipping_address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone_number",
+              "displayName": "phone_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        400,
+        128
+      ],
+      "id": "428032a0-d078-4c80-a28c-b233bba1c531",
+      "name": "updateOrder",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Pre-process Payload').item.json.content }}",
+        "options": {
+          "systemMessage": "=คุณคือ \"ChatBuddy\" ผู้ช่วยแม่ค้าออนไลน์ภาษาไทยที่ฉลาด เป็นมิตร และบริการดีเยี่ยม\n\n## บทบาทและวิธีการตอบ\n- ตอบกลับเป็นภาษาไทยที่สุภาพ เป็นธรรมชาติแบบแม่ค้าออนไลน์ (มีหางเสียง ค่ะ/นะคะ ทุกครั้ง)\n- ใช้ Emoji ประกอบให้ดูเป็นมิตร \n- ห้ามเปิดเผยว่าคุณเป็น AI หรือระบบอัตโนมัติ ให้ทำตัวเป็นผู้ช่วยแอดมินร้าน\n- ตอบให้ตรงคำถาม กระชับ ไม่เยิ่นเย้อ\n\n## ข้อมูลระบบปัจจุบัน\n- User ID: {{ $json.userId }}\n- Timestamp: {{ $json.timestamp }}\n\n## กฎการใช้งาน Tools (เครื่องมือ)\nคุณมี Tools ให้เลือกใช้ตามสถานการณ์ ดังนี้:\n\n1. Get_Product (ค้นหาสินค้า)\n- ใช้เมื่อ: ลูกค้าถามหาสินค้า ราคา เช็คสต็อก สี ไซส์ หรือโปรโมชัน\n- ส่ง search_query เป็นคำสั้นๆ ห้ามตอบราคาหรือสต็อกเดาเองเด็ดขาด\n\n2. Get_Order (เช็คสถานะพัสดุ)\n- ใช้เมื่อ: ลูกค้าต้องการตามของ เช็คเลขแทรคกิ้ง\n- ส่ง search_query เป็นชื่อหรือเบอร์โทร (ถ้าลูกค้ายังไม่ให้ ห้ามเรียก Tool ให้ถามลูกค้าก่อน)\n\n3. Save_Order (บันทึกคำสั่งซื้อ) & Update_Stock (ตัดสต็อก)\n- ใช้เมื่อ: ลูกค้าตกลงสั่งซื้อ และให้ข้อมูลครบ 5 อย่าง (ชื่อสินค้า, จำนวน, ชื่อผู้รับ, เบอร์โทร, ที่อยู่)\n- ⚠️ ขั้นตอนบังคับเมื่อสั่งซื้อสำเร็จ (ต้องทำตามลำดับ):\n  1) ใช้ Get_Product เพื่อดูราคาและสต็อกปัจจุบัน (เพื่อคำนวณ total_cost)\n  2) ใช้ Save_Order เพื่อบันทึกออเดอร์ (สร้าง orderid เป็น ORD-YYYYMMDD-XXXX)\n  3) ใช้ Update_Stock ทันที! เพื่อตัดสต็อกสินค้า โดยคำนวณสต็อกคงเหลือ (new_stock = สต็อกปัจจุบัน - จำนวนที่สั่ง)\n- เมื่อเครื่องมือทำงานเสร็จ ให้สรุปยอดรวม แจ้งเลขบัญชีธนาคาร และบอกให้ลูกค้า \"ส่งรูปสลิปโอนเงิน\"\n\n## การรับมือกรณีพิเศษ (เคสร้องเรียน / อารมณ์เสีย)\n- หากลูกค้าต่อว่า สินค้ามีปัญหา ขอคืนเงิน: ไม่ต้องใช้ Tool ใดๆ ให้พิมพ์ตอบกลับด้วยความใจเย็น ขออภัย และแจ้งรับเรื่องประสานงานให้แอดมิน\n\n## ⚠️ รูปแบบการตอบ (บังคับขั้นเด็ดขาด)\nเพื่อให้ระบบหลังบ้านทำงานได้ คุณต้องประเมินอารมณ์ของลูกค้าจากข้อความล่าสุด (Positive, Neutral หรือ Negative) และแนบมาในบรรทัดแรกสุดของคำตอบเสมอ ตามรูปแบบนี้เป๊ะๆ:\n\n[Sentiment: (อารมณ์)]\n(ข้อความตอบกลับลูกค้า...)"
+        }
+      },
+      "id": "0f8f1e48-b286-4359-8d96-419829db008f",
+      "name": "AI",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -816,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "57eb9fd8-dab8-45a7-9cca-e4dc47b2e622",
+              "leftValue": "={{ $('Pre-process Payload').item.json.intent }}",
+              "rightValue": "Complaint",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -112,
+        528
+      ],
+      "id": "5aaccd55-302a-49ba-807c-561f87841305",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1146702807,
+          "mode": "list",
+          "cachedResultName": "Complaints",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=1146702807"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Pre-process Payload').item.json.timestamp }}",
+            "userId": "={{ $('Pre-process Payload').item.json.userId }}",
+            "messageId": "={{ $('Pre-process Payload').item.json.messageId }}",
+            "intent": "={{ $('Pre-process Payload').item.json.intent }}",
+            "content": "={{ $('Pre-process Payload').item.json.content }}",
+            "summary": "= {{ $('Pre-process Payload').first().json.content }}",
+            "status": "Open"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messageId",
+              "displayName": "messageId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        560
+      ],
+      "id": "872f4f7a-8b2e-4ffd-b7d4-3e1c64d48a7a",
+      "name": "Savecomplaint",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 150032561,
+          "mode": "list",
+          "cachedResultName": "Log_Others",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=150032561"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Pre-process Payload').first().json.timestamp }}",
+            "userId": "={{ $('Pre-process Payload').first().json.userId }}",
+            "content": "={{ $('Pre-process Payload').first().json.content }}",
+            "sentiment": "={{ $('Extract Agent Reply').item.json.sentiment }}",
+            "status": " log",
+            "summary": "={{ $('Pre-process Payload').first().json.content }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        384
+      ],
+      "id": "8a936406-c2a8-45c6-9050-0adb1e72b755",
+      "name": "Savelog",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{ $('Extract Agent Reply').item.json.userId }}",
+        "messages": {
+          "values": [
+            {
+              "text": "=🚨 Complaint! 👤 ลูกค้า: {{ $('Pre-process Payload').first().json.userId }} 💬 พิมพ์ว่า: {{ $('Pre-process Payload').first().json.content }} 🤖 Bot ตอบว่า: {{ $('Extract Agent Reply').first().json.reply_message }}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        144,
+        512
+      ],
+      "id": "3563ed19-e911-447e-8ae5-465e502e6e7a",
+      "name": "Notiadmin",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "c7irhmHkjaJc5wED",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 150032561,
+          "mode": "list",
+          "cachedResultName": "Log_Others",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=150032561"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $('Pre-process Payload').first().json.timestamp }}",
+            "userId": "={{ $('Pre-process Payload').first().json.userId }}",
+            "content": "={{ $('Pre-process Payload').first().json.content }}",
+            "sentiment": "={{ $('Extract Agent Reply').item.json.sentiment }}",
+            "status": " log",
+            "summary": "={{ $('Pre-process Payload').first().json.content }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        48,
+        704
+      ],
+      "id": "65d2a610-16d3-48f4-97a7-b57306bc016b",
+      "name": "Log",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "z-ai/glm-4.5-air:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        720
+      ],
+      "id": "691b9399-bafe-4b52-af77-eef60e76e9b0",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "EIIeyOxA7zcaDuyt",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "ใช้อัปเดตจำนวนสต็อกสินค้าที่เหลืออยู่ เรียกใช้ทันทีหลังจาก Save_Order สำเร็จ โดยส่ง product_name และ new_stock (สต็อกเดิม - จำนวนที่สั่ง",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE",
+          "mode": "list",
+          "cachedResultName": "chatbuddy_database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2115791625,
+          "mode": "list",
+          "cachedResultName": "Products",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TFNUYIUcWKwkIrqm_iGl_CQ0J-Esqwev3rddakmBtCE/edit#gid=2115791625"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "stock": "={{$fromAI('new_stock', 'จำนวนสต็อกคงเหลือที่คำนวณแล้ว')}}",
+            "product_name": "={{ $fromAI('product_name', 'ชื่อสินค้าที่ต้องการตัดสต็อก') }}"
+          },
+          "matchingColumns": [
+            "product_name"
+          ],
+          "schema": [
+            {
+              "id": "product_id",
+              "displayName": "product_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "stock",
+              "displayName": "stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "promotion",
+              "displayName": "promotion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -512,
+        752
+      ],
+      "id": "0686a47e-d88e-461a-afd5-ee4385292709",
+      "name": "Update_Stock",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "61cB76tQTdG5BEGf",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "LINE Webhook": {
+      "main": [
+        [
+          {
+            "node": "Pre-process Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pre-process Payload": {
+      "main": [
+        [
+          {
+            "node": "Is Image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Image?": {
+      "main": [
+        [
+          {
+            "node": "Download Image from LINE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Line Messaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Agent Reply": {
+      "main": [
+        [
+          {
+            "node": "LINE Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Product": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save_Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image from LINE": {
+      "main": [
+        [
+          {
+            "node": "Save Slip to Drive",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Verify by image a bank slip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Reply Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Pending Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Order": {
+      "main": [
+        [
+          {
+            "node": "Matchorder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Payment": {
+      "main": [
+        [
+          {
+            "node": "updateOrder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Cron 20:00": {
+      "main": [
+        [
+          {
+            "node": "Fetch Orders",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Payments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Orders": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Payments": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Daily Report": {
+      "main": [
+        [
+          {
+            "node": "Multicast Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify by image a bank slip": {
+      "main": [
+        [
+          {
+            "node": "Is Duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Slip Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging": {
+      "main": [
+        [
+          {
+            "node": "AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Matchorder": {
+      "main": [
+        [
+          {
+            "node": "Save Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "updateOrder": {
+      "main": [
+        [
+          {
+            "node": "Payment Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI": {
+      "main": [
+        [
+          {
+            "node": "Extract Agent Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LINE Reply": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Notiadmin",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Savelog": {
+      "main": [
+        []
+      ]
+    },
+    "Notiadmin": {
+      "main": [
+        [
+          {
+            "node": "Savelog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Savecomplaint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_Stock": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "5dfb11d6-19e4-4f87-9cf9-a686a2c5f78d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6f2390f8d3b12b330079ab28a61d9b61867a3a358d18bf79d0c95bd230598c0a"
+  },
+  "id": "gLP1yy6RDmjUCt0O",
+  "tags": []
+}
